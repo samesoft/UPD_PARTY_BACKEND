@@ -49,6 +49,7 @@ const districtRoute = require('./routes/districtRoute');
 const regionRoute = require('./routes/regionRoute');
 const educationLevelRoute = require('./routes/educationLevelRoute');
 const usersRoute = require('./routes/userRoute');
+const eventRoute = require('./routes/eventRoute');
 
 app.use('/api/membership-level', membershipLevelRoute);
 app.use('/api/state', stateRoute);
@@ -59,7 +60,7 @@ app.use('/api/district', districtRoute);
 app.use('/api/region', regionRoute);
 app.use('/api/education-level', educationLevelRoute);
 app.use('/api/users',usersRoute);
-
+app.use('/api/events', eventRoute);
 
 // Version endpoint (optional)
 app.get('/version', (req, res) => {

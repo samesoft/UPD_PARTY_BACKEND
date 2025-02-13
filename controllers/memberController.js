@@ -79,11 +79,12 @@ exports.createMember = async (req, res) => {
       edu_level_id,
       party_role_id,
       gender,
+      role_id
     } = req.body;
     console.log("body: ", req.body);
 
     // Basic validation (adjust as needed)
-    if (!first_name || !last_name || !email || !password_hash ) {
+    if (!first_name || !last_name || !email || !password_hash || !role_id ) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -92,7 +93,7 @@ exports.createMember = async (req, res) => {
 
     // Use SELECT instead of CALL to match the function usage in addMember
     const result = await sequelize.query(
-      'SELECT create_member(:first_name, :last_name, :email, :password_hash, :middle_name, :mobile, :party_role, :memb_level_id, :district_id, :age_group_id, :edu_level_id, :party_role_id, :gender)',
+      'SELECT create_member(:first_name, :last_name, :email, :password_hash, :middle_name, :mobile, :memb_level_id, :district_id, :age_group_id, :edu_level_id, :party_role_id, :party_role, :gender, :role_id)',
       {
         replacements: {
           first_name,
@@ -101,13 +102,14 @@ exports.createMember = async (req, res) => {
           password_hash: password_hashed,
           middle_name,
           mobile,
-          party_role,
           memb_level_id,
           district_id,
           age_group_id,
           edu_level_id,
           party_role_id,
+          party_role,
           gender,
+          role_id
         },
         type: sequelize.QueryTypes.SELECT, // Use SELECT to match function usage
       }
@@ -384,7 +386,7 @@ exports.loginMember = async (req, res) => {
 
     // Create a JWT token (optional: can add member info as a payload)
     const token = jwt.sign(
-      { member_id: member.member_id },
+      { member_id: member.member_id, role_id: member.role_id },
       process.env.TOKEN_KEY,
       { expiresIn: '2h' }
     );
@@ -393,7 +395,8 @@ exports.loginMember = async (req, res) => {
     res.status(200).json({ 
       message: 'Login successful', 
       token: token, 
-      member_id: member.member_id 
+      member_id: member.member_id,
+      role_id: member.role_id
     });
   } catch (error) {
     console.error('Error logging in:', error);

@@ -7,7 +7,7 @@ router.post('/', membershipLevelsController.createMembershipLevel);
 router.get('/', membershipLevelsController.getAllMembershipLevels)
 router.get('/:id', membershipLevelsController.getMembershipLevel);
 router.put('/:id', membershipLevelsController.updateMembershipLevel);
-router.delete('/:id', membershipLevelsController.deleteMembershipLevel);
+router.delete('/register-to-event', membershipLevelsController.deleteMembershipLevel);
 
 
 module.exports = router;
