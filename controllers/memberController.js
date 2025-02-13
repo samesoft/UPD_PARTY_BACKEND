@@ -2,10 +2,67 @@ const { sequelize } = require('../config/dbConfig');
 const bcrypt = require('bcrypt'); // Import bcrypt for password hashing
 const crypto = require('crypto');
 const axios = require('axios');
+const jwt = require('jsonwebtoken');
 
 
 
 // Create a new member using the stored procedure "member_create"
+// exports.createMember = async (req, res) => {
+//   try {
+//     const {
+//       first_name,
+//       last_name,
+//       email,
+//       password_hash,
+//       middle_name,
+//       mobile,
+//       memb_level_id,
+//       district_id,
+//       age_group_id,
+//       edu_level_id,
+//       party_role_id,
+//       gender,
+//     } = req.body;
+//     console.log("body: ", req.body);
+
+//     // Basic validation (adjust as needed)
+//     if (!first_name || !last_name || !email || !password_hash) {
+//       return res.status(400).json({ error: 'Missing required fields' });
+//     }
+
+//     const saltRounds = 10; // Number of salt rounds for bcrypt
+//     const password_hashed = await bcrypt.hash(password_hash, saltRounds);
+//     // Call the stored procedure to create a new member.
+//     // If you are not using a stored procedure, you can insert directly into the table.
+//     const result = await sequelize.query(
+//       'CALL member_create(:p_first_name, :p_last_name, :p_email, :p_password_hash, :p_middle_name, :p_mobile, :p_memb_level_id, :p_district_id, :p_age_group_id, :p_edu_level_id, :p_party_role_id, :p_gender)',
+//       {
+//         replacements: {
+//           p_first_name: first_name,
+//           p_last_name: last_name,
+//           p_email: email,
+//           p_password_hash: password_hashed,
+//           p_middle_name: middle_name,
+//           p_mobile: mobile,
+//           p_memb_level_id: memb_level_id,
+//           p_district_id: district_id,
+//           p_age_group_id: age_group_id,
+//           p_edu_level_id: edu_level_id,
+//           p_party_role_id: party_role_id,
+//           p_gender: gender,
+//         },
+//         // Using SELECT since the stored procedure returns a result set.
+//         type: sequelize.QueryTypes.SELECT,
+//       }
+//     );
+//     // result is an array containing the inserted row.
+//     res.status(201).json(result[0]);
+//   } catch (error) {
+//     console.error('Error creating member:', error);
+//     res.status(500).json({ error: 'Failed to create member' });
+//   }
+// };
+
 exports.createMember = async (req, res) => {
   try {
     const {
@@ -15,6 +72,7 @@ exports.createMember = async (req, res) => {
       password_hash,
       middle_name,
       mobile,
+      party_role,
       memb_level_id,
       district_id,
       age_group_id,
@@ -25,42 +83,45 @@ exports.createMember = async (req, res) => {
     console.log("body: ", req.body);
 
     // Basic validation (adjust as needed)
-    if (!first_name || !last_name || !email || !password_hash) {
+    if (!first_name || !last_name || !email || !password_hash ) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
     const saltRounds = 10; // Number of salt rounds for bcrypt
     const password_hashed = await bcrypt.hash(password_hash, saltRounds);
-    // Call the stored procedure to create a new member.
-    // If you are not using a stored procedure, you can insert directly into the table.
+
+    // Use SELECT instead of CALL to match the function usage in addMember
     const result = await sequelize.query(
-      'CALL member_create(:p_first_name, :p_last_name, :p_email, :p_password_hash, :p_middle_name, :p_mobile, :p_memb_level_id, :p_district_id, :p_age_group_id, :p_edu_level_id, :p_party_role_id, :p_gender)',
+      'SELECT create_member(:first_name, :last_name, :email, :password_hash, :middle_name, :mobile, :party_role, :memb_level_id, :district_id, :age_group_id, :edu_level_id, :party_role_id, :gender)',
       {
         replacements: {
-          p_first_name: first_name,
-          p_last_name: last_name,
-          p_email: email,
-          p_password_hash: password_hashed,
-          p_middle_name: middle_name,
-          p_mobile: mobile,
-          p_memb_level_id: memb_level_id,
-          p_district_id: district_id,
-          p_age_group_id: age_group_id,
-          p_edu_level_id: edu_level_id,
-          p_party_role_id: party_role_id,
-          p_gender: gender,
+          first_name,
+          last_name,
+          email,
+          password_hash: password_hashed,
+          middle_name,
+          mobile,
+          party_role,
+          memb_level_id,
+          district_id,
+          age_group_id,
+          edu_level_id,
+          party_role_id,
+          gender,
         },
-        // Using SELECT since the stored procedure returns a result set.
-        type: sequelize.QueryTypes.SELECT,
+        type: sequelize.QueryTypes.SELECT, // Use SELECT to match function usage
       }
     );
-    // result is an array containing the inserted row.
-    res.status(201).json(result[0]);
+    const newMemberId = result[0].member_id;
+
+    // Return the first result (if any)
+    res.status(201).json({ message: 'Member created successfully', member_id: newMemberId });
   } catch (error) {
     console.error('Error creating member:', error);
     res.status(500).json({ error: 'Failed to create member' });
   }
 };
+
 
 // Retrieve a member by id
 exports.getMember = async (req, res) => {
@@ -210,26 +271,27 @@ exports.requestOtp = async (req, res) => {
     return res.status(400).json({ error: 'Phone number is required' });
   }
 
-  cleanedPhoneNumber = phoneNumber.startsWith('+252') ? phoneNumber.slice(4) : phoneNumber;
+  const cleanedPhoneNumber = phoneNumber.startsWith('+252') ? phoneNumber.slice(4) : phoneNumber;
   console.log("Original Phone Number: ", phoneNumber);
   console.log("Cleaned Phone Number: ", cleanedPhoneNumber);
 
-  try {  
+  try {
     // Generate OTP (6-digit random number)
     const otp = crypto.randomInt(100000, 999999).toString();
 
     // Set OTP expiry time (e.g., 5 minutes)
     const expiryTime = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
 
-    // Save OTP to the database using a stored procedure or raw SQL query
+    // Save OTP to the database using the PostgreSQL function
     await sequelize.query(
-      'CALL sp_add_otp(:mobile, :otp, :expiry_time)',
+      'SELECT member_add_otp(:mobile, :otp, :expiry_time)',
       {
         replacements: {
-          mobile: phoneNumber,
+          mobile: cleanedPhoneNumber,
           otp: otp,
           expiry_time: expiryTime,
         },
+        type: sequelize.QueryTypes.SELECT,
       }
     );
 
@@ -254,24 +316,24 @@ exports.verifyOtp = async (req, res) => {
   }
 
   try {
-    // Call the stored procedure to fetch the OTP record
+    // Call the PostgreSQL function to fetch the OTP record
     const [results] = await sequelize.query(
-      'CALL sp_get_otp(:mobile, :otp)', // Use the stored procedure
+      'SELECT * FROM member_get_otp(:mobile, :otp)',
       {
         replacements: {
           mobile: phoneNumber,
-          otp: otp // Pass both phone number and OTP
-        }
+          otp: otp,
+        },
+        type: sequelize.QueryTypes.SELECT,
       }
     );
 
     // Check if the result is empty
     if (!results || results.length === 0) {
-      return res.status(400).json({ error: 'Incorrect otp' });
+      return res.status(400).json({ error: 'Incorrect OTP' });
     }
-    console.log(results);
 
-    const { otp: storedOtp, expiry_time: expiryTime } = results;
+    const { otp: storedOtp, expiry_time: expiryTime } = results[0];
 
     // Verify if OTP matches
     if (storedOtp !== otp) {
@@ -290,5 +352,76 @@ exports.verifyOtp = async (req, res) => {
   } catch (error) {
     console.error('Error verifying OTP:', error);
     return res.status(500).json({ error: 'Failed to verify OTP' });
+  }
+};
+
+exports.loginMember = async (req, res) => {
+  try {
+    const { mobile, password_hash } = req.body;
+
+    // Call stored procedure or query to find the member by mobile number
+    const [member] = await sequelize.query(
+      'SELECT * FROM members WHERE mobile = :mobile',
+      {
+        replacements: { mobile },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    // If member not found
+    if (!member || member.length === 0) {
+      console.log('Member not found for mobile:', mobile);
+      return res.status(404).json({ error: 'Member not found' });
+    }
+
+    // Compare the entered password hash with the stored password hash
+    const isPasswordValid = await bcrypt.compare(password_hash, member.password_hash);
+
+    if (!isPasswordValid) {
+      console.log('Invalid password attempt for member:', mobile);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Create a JWT token (optional: can add member info as a payload)
+    const token = jwt.sign(
+      { member_id: member.member_id },
+      process.env.TOKEN_KEY,
+      { expiresIn: '2h' }
+    );
+
+    // Respond with the token and member_id
+    res.status(200).json({ 
+      message: 'Login successful', 
+      token: token, 
+      member_id: member.member_id 
+    });
+  } catch (error) {
+    console.error('Error logging in:', error);
+    res.status(500).json({ error: 'Failed to log in' });
+  }
+};
+
+exports.createDonation = async (req, res) => {
+  try {
+    const { member_id, amount, payment_method, transaction_id } = req.body;
+
+    // Basic validation
+    if (!member_id || !amount || !payment_method || !transaction_id) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Call the stored function
+    const result = await sequelize.query(
+      'SELECT create_donation(:member_id, :amount, :payment_method, :transaction_id) AS don_id',
+      {
+        replacements: { member_id, amount, payment_method, transaction_id },
+        type: sequelize.QueryTypes.RAW,
+      }
+    );
+
+    res.status(201).json({ don_id: result[0].don_id });
+  } catch (error) {
+    console.error('Error creating donation:', error);
+    res.status(500).json({ error: 'Failed to create donation' });
   }
 };

@@ -59,19 +59,10 @@ exports.createMembershipLevel = async (req, res) => {
 
   exports.getAllMembershipLevels = async (req, res) => {
     try {
-        // Extract pagination parameters (optional)
-        const page = req.query.page ? parseInt(req.query.page, 10) : null; // Null if not provided
-        const limit = req.query.limit ? parseInt(req.query.limit, 10) : null; // Null means fetch all
-
-        console.log('Page:', page, 'Limit:', limit);
-
-        // Call the PostgreSQL function `membershiplevel_get_all`
+        // Call the modified PostgreSQL function `membershiplevel_get_all`
         const result = await sequelize.query(
-            'SELECT * FROM membershiplevel_get_all(:p_limit, :p_page)',
-            {
-                replacements: { p_limit: limit, p_page: page },
-                type: sequelize.QueryTypes.SELECT,
-            }
+            'SELECT * FROM membershiplevel_get_all()',
+            { type: sequelize.QueryTypes.SELECT }
         );
 
         // Check if results exist
@@ -79,25 +70,14 @@ exports.createMembershipLevel = async (req, res) => {
             return res.status(404).json({ error: 'No membership levels found' });
         }
 
-        // Extract total count from the first record
-        const totalRecords = result[0]?.total_count || 0;
-        const totalPages = limit ? Math.ceil(totalRecords / limit) : 1;
-
-        // Respond with membership levels and pagination details
-        res.status(200).json({
-            data: result,
-            pagination: {
-                currentPage: page || 1,
-                limit,
-                totalPages,
-                totalRecords,
-            },
-        });
+        // Respond with membership levels (without pagination)
+        res.status(200).json({ data: result });
     } catch (error) {
         console.error('Error retrieving membership levels:', error);
         res.status(500).json({ error: 'Failed to retrieve membership levels' });
     }
 };
+
 
 
 exports.updateMembershipLevel = async (req, res) => {

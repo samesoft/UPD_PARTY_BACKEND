@@ -9,5 +9,7 @@ router.put('/:id', memberController.updateMember);
 router.delete('/:id', memberController.deleteMember);
 router.post('/requestOtp', memberController.requestOtp);
 router.post('/verify-otp', memberController.verifyOtp);
+router.post('/login', memberController.loginMember);
+router.post('/donation', memberController.createDonation)
 
 module.exports = router;
