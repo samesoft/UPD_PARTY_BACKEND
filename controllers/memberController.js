@@ -360,6 +360,7 @@ exports.verifyOtp = async (req, res) => {
 exports.loginMember = async (req, res) => {
   try {
     const { mobile, password_hash } = req.body;
+    console.log(req.body);
 
     // Call stored procedure or query to find the member by mobile number
     const [member] = await sequelize.query(

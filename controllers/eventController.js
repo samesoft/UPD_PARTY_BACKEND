@@ -47,11 +47,12 @@ exports.createEvent = async (req, res) => {
 exports.getEventsByDistrict = async (req, res) => {
     try {
         const { id } = req.params;
+        const { member_id} = req.query;
 
         const events = await sequelize.query(
-            'SELECT * FROM events_get_by_district(:district_id)',
+            'SELECT * FROM events_get_upcoming_by_district(:district_id, :member_id)',
             {
-                replacements: { district_id: id },
+                replacements: { district_id: id, member_id },
                 type: sequelize.QueryTypes.SELECT,
             }
         );
@@ -65,7 +66,7 @@ exports.getEventsByDistrict = async (req, res) => {
 
 exports.registerToEvent = async (req, res) => {
     try {
-        const { member_id, event_id } = req.body;
+        const { member_id, event_id, status} = req.body;
 
         if (!member_id || !event_id) {
             return res.status(400).json({ error: 'Missing required fields' });
@@ -74,7 +75,7 @@ exports.registerToEvent = async (req, res) => {
         await sequelize.query(
             'SELECT event_register_to(:member_id, :event_id, :status)',
             {
-                replacements: { member_id, event_id, status: 'registered' },
+                replacements: { member_id, event_id, status },
                 type: sequelize.QueryTypes.SELECT, // Stored functions using VOID don't return anything
             }
         );
