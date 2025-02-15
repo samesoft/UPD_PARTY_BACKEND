@@ -493,12 +493,12 @@ exports.requestPayment = async (req, res) => {
 
           // Prepare the phone number for SMS
           const formattedPhone = phone.startsWith('+252') ? phone : `+252${phone}`;
-          const message = `Thank you for donationg to $${txAmount} upd party`
+          const message = `Thank you for donating to $${txAmount} upd party`
           console.log("message: ", message);
 
 
           await axios.post(
-            'https://mgs-backend-api.samesoft.app/api/owners/sms',
+            'http://upd-party-backend.samesoft.app/api/members/sms',
             { phoneNumber: formattedPhone, message: message }
           );
 
@@ -575,3 +575,55 @@ exports.requestPayment = async (req, res) => {
     });
   }
 };
+
+exports.sendSMS = async (req, res) => {
+  const username = "MOF2024";
+  const password = "2QSzn638r3ubcu7bHo0Zmg==";
+  const sender_id = "WMaaliyadda";
+  const { phoneNumber, message } = req.body;
+
+  try {
+    // Get access token
+    const tokenResponse = await axios.post(
+      'https://smsapi.hormuud.com/Token',
+      new URLSearchParams({
+        grant_type: 'password',
+        username: username,
+        password: password
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+
+    const accessToken = tokenResponse.data.access_token;
+
+    if (!accessToken) {
+      throw new Error('Failed to retrieve access token.');
+    }
+
+    // Send SMS
+    const smsResponse = await axios.post(
+      'https://smsapi.hormuud.com/api/sendSMS',
+      {
+        mobile: phoneNumber,
+        message: message,
+        senderid: sender_id,
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    res.status(200).json({ success: 'successfuly send the message' });
+
+  } catch (error) {
+    res.status(500).json('Error sending SMS:', error);
+    console.error('Error sending SMS:', error);
+    return { error: error.message || 'Failed to send SMS' };
+  }
+}
