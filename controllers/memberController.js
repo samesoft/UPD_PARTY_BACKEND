@@ -361,6 +361,7 @@ exports.loginMember = async (req, res) => {
   try {
     console.log(req.body);
     const { mobile, password_hash } = req.body;
+    console.log(req.body);
 
     // Query with join: get member details and role_name from roles table.
     const [member] = await sequelize.query(
