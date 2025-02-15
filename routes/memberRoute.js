@@ -11,6 +11,6 @@ router.post('/requestOtp', memberController.requestOtp);
 router.post('/verify-otp', memberController.verifyOtp);
 router.post('/login', memberController.loginMember);
 router.post('/donation', memberController.createDonation);
-router.get('/requestPayment', memberController.requestPayment);
+router.get('/payment/requestPayment', memberController.requestPayment);
 
 module.exports = router;

@@ -455,6 +455,8 @@ exports.requestPayment = async (req, res) => {
   try {
     const { phone, amount } = req.query;
 
+    console.log(req.query);
+
     // Validate required input fields
     if (!phone || !amount) {
       return res.status(400).json({
