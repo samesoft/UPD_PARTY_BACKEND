@@ -84,7 +84,7 @@ exports.createMember = async (req, res) => {
     console.log("body: ", req.body);
 
     // Basic validation (adjust as needed)
-    if (!first_name || !last_name || !email || !password_hash || !role_id ) {
+    if (!first_name || !last_name || !email || !password_hash || !role_id) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -359,11 +359,15 @@ exports.verifyOtp = async (req, res) => {
 
 exports.loginMember = async (req, res) => {
   try {
+    console.log(req.body);
     const { mobile, password_hash } = req.body;
 
-    // Call stored procedure or query to find the member by mobile number
+    // Query with join: get member details and role_name from roles table.
     const [member] = await sequelize.query(
-      'SELECT * FROM members WHERE mobile = :mobile',
+      `SELECT m.*, r.role_name 
+       FROM members m 
+       LEFT JOIN roles r ON m.role_id = r.role_id
+       WHERE m.mobile = :mobile`,
       {
         replacements: { mobile },
         type: sequelize.QueryTypes.SELECT,
@@ -371,38 +375,39 @@ exports.loginMember = async (req, res) => {
     );
 
     // If member not found
-    if (!member || member.length === 0) {
+    if (!member) {
       console.log('Member not found for mobile:', mobile);
       return res.status(404).json({ error: 'Member not found' });
     }
 
     // Compare the entered password hash with the stored password hash
     const isPasswordValid = await bcrypt.compare(password_hash, member.password_hash);
-
     if (!isPasswordValid) {
       console.log('Invalid password attempt for member:', mobile);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Create a JWT token (optional: can add member info as a payload)
+    // Create a JWT token (optionally add member info as payload)
     const token = jwt.sign(
       { member_id: member.member_id, role_id: member.role_id },
       process.env.TOKEN_KEY,
       { expiresIn: '2h' }
     );
 
-    // Respond with the token and member_id
-    res.status(200).json({ 
-      message: 'Login successful', 
-      token: token, 
+    // Respond with token, member_id, role_id and the role_name from the roles table.
+    res.status(200).json({
+      message: 'Login successful',
+      token: token,
       member_id: member.member_id,
-      role_id: member.role_id
+      role_id: member.role_id,
+      role_name: member.role_name
     });
   } catch (error) {
     console.error('Error logging in:', error);
     res.status(500).json({ error: 'Failed to log in' });
   }
 };
+
 
 exports.createDonation = async (req, res) => {
   try {

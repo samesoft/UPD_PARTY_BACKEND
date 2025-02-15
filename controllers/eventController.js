@@ -1,43 +1,49 @@
 const { sequelize } = require('../config/dbConfig');
 
 exports.createEvent = async (req, res) => {
+    console.log(req.body);
     try {
-      const { title, description, location, start_time, end_time, created_by_member_id } = req.body;
-  
-      if (!title || !description || !location || !start_time || !end_time || !created_by_member_id) {
-        return res.status(400).json({ error: 'Missing required fields' });
-      }
-  
-      const result = await sequelize.query(
-        'SELECT event_create(:title, :description, :location, :start_time, :end_time, :created_by_member_id)',
-        {
-          replacements: {
-            title,
-            description,
-            location,
-            start_time,
-            end_time,
-            created_by_member_id
-          },
-          type: sequelize.QueryTypes.SELECT,
-        }
-      );
-  
-      const newEventId = result[0].create_event;
-      res.status(201).json({ message: 'Event created successfully', event_id: newEventId });
+        const { title, district_id, description, location, start_time, end_time, created_by_member_id } = req.body;
+        // if (!title || district_id || !description || !location || !start_time || !end_time || !created_by_member_id) {
+        //     return res.status(400).json({ error: 'Missing required fields' });
+        // }
+        const result = await sequelize.query(
+            `SELECT event_create(
+                :title::varchar, 
+                :district_id::integer, 
+                :description::text, 
+                :location::varchar, 
+                :start_time::timestamp, 
+                :end_time::timestamp, 
+                :created_by_member_id::integer
+              )`,
+            {
+                replacements: {
+                    title,
+                    district_id,           // This should be a valid integer
+                    description,
+                    location,
+                    start_time,            // Should be in a valid timestamp format, e.g., "2025-02-14T16:23:00"
+                    end_time,              // Should be in a valid timestamp format
+                    created_by_member_id   // Valid integer
+                },
+                type: sequelize.QueryTypes.SELECT,
+            }
+        );
+        const newEventId = result[0].create_event;
+        res.status(201).json({ message: 'Event created successfully', event_id: newEventId });
     } catch (error) {
-      console.error('Error creating event:', error);
-      res.status(500).json({ error: 'Failed to create event' });
+        res.status(500).json({ error: 'Failed to create event' });
     }
-  };
+};
 
-  exports.getAllEvents = async (req, res) => {
+exports.getAllEvents = async (req, res) => {
     try {
         const events = await sequelize.query('SELECT * FROM events_get_all()', {
             type: sequelize.QueryTypes.SELECT,
         });
 
-        res.status(200).json({data: events});
+        res.status(200).json({ data: events });
     } catch (error) {
         console.error('Error fetching events:', error);
         res.status(500).json({ error: 'Failed to fetch events' });
@@ -83,6 +89,73 @@ exports.registerToEvent = async (req, res) => {
     } catch (error) {
         console.error('Error registering to event:', error);
         res.status(500).json({ error: 'Failed to register to event' });
+    }
+};
+
+
+exports.deleteEvent = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await sequelize.query(
+            `SELECT event_delete(:p_event_id::integer)`,
+            {
+                replacements: { p_event_id: id },
+                type: sequelize.QueryTypes.SELECT,
+            }
+        );
+
+        const deleteStatus = result[0].event_delete;
+        res.status(200).json({ message: 'Event deleted successfully', status: deleteStatus });
+    } catch (error) {
+        console.error('Error deleting event:', error);
+        res.status(500).json({ error: 'Failed to delete event' });
+    }
+};
+
+exports.updateEvent = async (req, res) => {
+    try {
+        const {
+            id,
+            title,
+            district_id,
+            description,
+            location,
+            start_time,
+            end_time,
+            created_by_member_id
+        } = req.body;
+
+        const result = await sequelize.query(
+            `SELECT event_update(
+          :p_event_id::integer,
+          :p_title::varchar, 
+          :p_district_id::integer, 
+          :p_description::text, 
+          :p_location::varchar, 
+          :p_start_time::timestamp, 
+          :p_end_time::timestamp, 
+          :p_created_by_member_id::integer
+      )`,
+            {
+                replacements: {
+                    p_event_id: id,
+                    p_title: title,
+                    p_district_id: district_id,
+                    p_description: description,
+                    p_location: location,
+                    p_start_time: start_time, // e.g., "2025-02-14T16:23:00"
+                    p_end_time: end_time,   // e.g., "2025-02-14T16:24:00"
+                    p_created_by_member_id: created_by_member_id
+                },
+                type: sequelize.QueryTypes.SELECT,
+            }
+        );
+
+        const updatedEventId = result[0].event_update;
+        res.status(200).json({ message: 'Event updated successfully', event_id: updatedEventId });
+    } catch (error) {
+        console.error('Error updating event:', error);
+        res.status(500).json({ error: 'Failed to update event' });
     }
 };
 
