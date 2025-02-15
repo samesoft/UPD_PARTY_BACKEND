@@ -93,6 +93,24 @@ exports.registerToEvent = async (req, res) => {
         res.status(500).json({ error: 'Failed to register to event' });
     }
 };
+exports.getRegisteredEvents = async (req, res) => {
+    try {
+        const { member_id } = req.query;
+
+        const events = await sequelize.query(
+            'SELECT * FROM events_get_registered_by_member(:member_id)',
+            {
+                replacements: { member_id },
+                type: sequelize.QueryTypes.SELECT,
+            }
+        );
+
+        res.status(200).json(events);
+    } catch (error) {
+        console.error('Error fetching registered events:', error);
+        res.status(500).json({ error: 'Failed to fetch registered events' });
+    }
+};
 
 
 exports.deleteEvent = async (req, res) => {
