@@ -52,7 +52,6 @@ exports.getAllEvents = async (req, res) => {
 
 exports.getEventsByDistrict = async (req, res) => {
     try {
-        console.log('>>>>>>>>>EVENT REGISTRATION>>>>>>>>>>>>>>', req.body);
         const { id } = req.params;
         const { member_id } = req.query;
 
@@ -63,7 +62,6 @@ exports.getEventsByDistrict = async (req, res) => {
                 type: sequelize.QueryTypes.SELECT,
             }
         );
-        console.log('>>>>>>>>>Event Registration>>>>>>>>>>>>>>', events);
         res.status(200).json(events);
     } catch (error) {
         console.error('Error fetching events by district:', error);
@@ -161,3 +159,28 @@ exports.updateEvent = async (req, res) => {
     }
 };
 
+exports.getMemberEvents = async (req, res) => {
+    console.log('>>>>>>ENTERED >>>>>>>>>>');
+    try {
+        console.log(req.params);
+        // Retrieve the member_id from the route parameters (or use req.query if needed)
+        const { member_id } = req.params;
+
+        // Execute a raw SQL query with an inner join
+        const events = await sequelize.query(
+            `SELECT e.*
+         FROM eventregistrations er
+         INNER JOIN events e ON er.event_id = e.id
+         WHERE er.member_id = :member_id`,
+            {
+                replacements: { member_id },
+                type: sequelize.QueryTypes.SELECT,
+            }
+        );
+        console.log(events);
+        res.status(200).json(events);
+    } catch (error) {
+        console.error('Error fetching member events:', error);
+        res.status(500).json({ error: 'Failed to fetch events for the member' });
+    }
+};

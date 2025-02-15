@@ -4,6 +4,7 @@ const router = express.Router();
 
 
 router.post('/', eventController.createEvent);
+router.get('/member:member_id', eventController.getMemberEvents);
 router.get('/', eventController.getAllEvents);
 router.put('/', eventController.updateEvent);
 router.get('/:id', eventController.getEventsByDistrict);
