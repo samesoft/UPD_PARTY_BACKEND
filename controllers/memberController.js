@@ -302,7 +302,7 @@ exports.requestOtp = async (req, res) => {
       'https://mgs-backend-api.samesoft.app/api/owners/sms',
       { phoneNumber: phoneNumber, message: `Your OTP is ${otp}` }
     );
-
+    console.log("THIS IS THE OYP:", otp);
     res.status(200).json({ success: 'OTP sent successfully' });
   } catch (error) {
     console.error('Error sending OTP:', error);
@@ -311,7 +311,11 @@ exports.requestOtp = async (req, res) => {
 };
 
 exports.verifyOtp = async (req, res) => {
+
+  console.log(req.body);
   const { phoneNumber, otp } = req.body;
+
+
 
   if (!phoneNumber || !otp) {
     return res.status(400).json({ error: 'Phone number and OTP are required' });
@@ -330,12 +334,14 @@ exports.verifyOtp = async (req, res) => {
       }
     );
 
+    
+
     // Check if the result is empty
     if (!results || results.length === 0) {
       return res.status(400).json({ error: 'Incorrect OTP' });
     }
-
-    const { otp: storedOtp, expiry_time: expiryTime } = results[0];
+   console.log("This is the otp",results);
+    const { otp: storedOtp, expiry_time: expiryTime } = results;
 
     // Verify if OTP matches
     if (storedOtp !== otp) {

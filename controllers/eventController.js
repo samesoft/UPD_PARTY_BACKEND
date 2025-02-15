@@ -52,8 +52,9 @@ exports.getAllEvents = async (req, res) => {
 
 exports.getEventsByDistrict = async (req, res) => {
     try {
+        console.log('>>>>>>>>>EVENT REGISTRATION>>>>>>>>>>>>>>', req.body);
         const { id } = req.params;
-        const { member_id} = req.query;
+        const { member_id } = req.query;
 
         const events = await sequelize.query(
             'SELECT * FROM events_get_upcoming_by_district(:district_id, :member_id)',
@@ -62,7 +63,7 @@ exports.getEventsByDistrict = async (req, res) => {
                 type: sequelize.QueryTypes.SELECT,
             }
         );
-
+        console.log('>>>>>>>>>Event Registration>>>>>>>>>>>>>>', events);
         res.status(200).json(events);
     } catch (error) {
         console.error('Error fetching events by district:', error);
@@ -72,7 +73,7 @@ exports.getEventsByDistrict = async (req, res) => {
 
 exports.registerToEvent = async (req, res) => {
     try {
-        const { member_id, event_id, status} = req.body;
+        const { member_id, event_id, status } = req.body;
 
         if (!member_id || !event_id) {
             return res.status(400).json({ error: 'Missing required fields' });
