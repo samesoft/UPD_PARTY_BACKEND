@@ -10,6 +10,8 @@ router.put('/', eventController.updateEvent);
 router.get('/:id', eventController.getEventsByDistrict);
 router.post('/register', eventController.registerToEvent);
 router.delete('/:id', eventController.deleteEvent);
+router.get('/active/registered', eventController.getRegisteredEvents);
+
 
 
 module.exports = router;

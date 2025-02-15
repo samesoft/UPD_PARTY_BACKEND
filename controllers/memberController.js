@@ -441,3 +441,137 @@ exports.createDonation = async (req, res) => {
     res.status(500).json({ error: 'Failed to create donation' });
   }
 };
+
+
+const initializeWaafiPay = () => {
+  return require('waafipay-sdk-node').API(
+    "API-1144768468AHX", //merchantUid
+    "1000201", //apiUserId
+    "M0910188", //apiKey
+    { testMode: true } // false for production, true for testing
+  );
+};
+exports.requestPayment = async (req, res) => {
+  try {
+    const { phone, amount } = req.query;
+
+    console.log(req.query);
+
+    // Validate required input fields
+    if (!phone || !amount) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number and amount are required fields.',
+      });
+    }
+    const waafipay = initializeWaafiPay();
+
+    waafipay.preAuthorize(
+      {
+        paymentMethod: "MWALLET_ACCOUNT",
+        accountNo: `252${phone}`, // Ensure valid format
+        amount,
+        currency: "USD",
+        description: "Request payment description",
+      },
+      async (err, result) => {
+        if (err) {
+          console.error('Error from WaafiPay:', err);
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to request payment.',
+            details: err.message,
+          });
+        }
+        console.log('WaafiPay response:', result);
+
+
+        if (result.responseCode === "2001") {
+
+          // Extract relevant details from the WaafiPay response
+          const { referenceId, transactionId, txAmount } = result.params;
+
+          // Prepare the phone number for SMS
+          const formattedPhone = phone.startsWith('+252') ? phone : `+252${phone}`;
+          const message = `Thank you for donationg to $${txAmount} upd party`
+          console.log("message: ", message);
+
+
+          await axios.post(
+            'https://mgs-backend-api.samesoft.app/api/owners/sms',
+            { phoneNumber: formattedPhone, message: message }
+          );
+
+          const data_for_asm = {
+            schemaVersion: "1.0",
+            requestId: result.responseId,
+            timestamp: "2025-01-27 Standard",
+            channelName: "WEB",
+            serviceName: "API_PREAUTHORIZE_COMMIT",
+            serviceParams: {
+              merchantUid: "M0910188",
+              apiUserId: "1000201",
+              apiKey: "API-1144768468AHX",
+              transactionId: transactionId, // Reading from the main result
+              description: "Commited",
+              referenceId: referenceId, // Reading from the main result
+            },
+          };
+
+          console.log("data_for_asm: ", data_for_asm)
+          try {
+            // Make POST request to https://api.waafipay.net/asm
+            const apiResponse = await axios.post(
+              'https://api.waafipay.net/asm',
+              data_for_asm,
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              }
+            );
+
+            console.log('Response from WaafiPay ASM API:', apiResponse.data);
+
+            // Payment request processed successfully
+            return res.status(200).json({
+              success: true,
+              message: 'Payment request processed successfully',
+              waafipayResponse: result,
+              // asmResponse: apiResponse.data,
+            });
+          } catch (apiError) {
+            console.error('Error while sending data to ASM API:', apiError);
+            return res.status(500).json({
+              success: false,
+              message: 'Payment request processed but failed to commit the transaction.',
+              details: apiError.message,
+            });
+          }
+        }
+
+        if (result.responseMsg.includes("Aborted")) {
+          // Payment aborted by the user
+          return res.status(400).json({
+            success: false,
+            message: 'Payment request was aborted by the user.',
+          });
+        }
+
+        // Payment request failed
+        return res.status(400).json({
+          success: false,
+          message: 'Payment request failed. Please try again.',
+          details: result.responseMsg,
+        });
+      }
+    );
+  } catch (error) {
+    console.error('Error while requesting payment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error.',
+      details: error.message,
+    });
+  }
+};
