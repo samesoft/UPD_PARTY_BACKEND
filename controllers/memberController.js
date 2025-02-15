@@ -401,7 +401,8 @@ exports.loginMember = async (req, res) => {
       token: token,
       member_id: member.member_id,
       role_id: member.role_id,
-      role_name: member.role_name
+      role_name: member.role_name,
+      district_id: member.district_id
     });
   } catch (error) {
     console.error('Error logging in:', error);
