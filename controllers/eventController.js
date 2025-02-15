@@ -178,7 +178,6 @@ exports.updateEvent = async (req, res) => {
 };
 
 exports.getMemberEvents = async (req, res) => {
-    console.log('>>>>>>ENTERED >>>>>>>>>>');
     try {
         console.log(req.params);
         // Retrieve the member_id from the route parameters (or use req.query if needed)
