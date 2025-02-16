@@ -493,14 +493,16 @@ exports.requestPayment = async (req, res) => {
 
           // Prepare the phone number for SMS
           const formattedPhone = phone.startsWith('+252') ? phone : `+252${phone}`;
-          const message = `Thank you for donating to $${txAmount} upd party`
+          const message = `Thank you for donating $${txAmount} to the upd party`
           console.log("message: ", message);
 
 
-          await axios.post(
+          const response = await axios.post(
             'http://upd-party-backend.samesoft.app/api/members/sms',
             { phoneNumber: formattedPhone, message: message }
           );
+
+          // console.log(response.data);
 
           const data_for_asm = {
             schemaVersion: "1.0",
@@ -518,7 +520,7 @@ exports.requestPayment = async (req, res) => {
             },
           };
 
-          console.log("data_for_asm: ", data_for_asm)
+          // console.log("data_for_asm: ", data_for_asm)
           try {
             // Make POST request to https://api.waafipay.net/asm
             const apiResponse = await axios.post(
@@ -619,6 +621,7 @@ exports.sendSMS = async (req, res) => {
         },
       }
     );
+    console.log("sms response: ", smsResponse.data);
     res.status(200).json({ success: 'successfuly send the message' });
 
   } catch (error) {
