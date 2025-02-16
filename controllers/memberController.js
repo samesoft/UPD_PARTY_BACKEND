@@ -412,8 +412,7 @@ exports.loginMember = async (req, res) => {
     });
   } catch (error) {
     console.error('Error logging in:', error);
-    res.status(500).json({ error: 'Failed to log in' });
-  }
+    res.status(500).json({ error: 'Failed to log in', details: error.message });  }
 };
 
 
@@ -498,7 +497,7 @@ exports.requestPayment = async (req, res) => {
 
 
           const response = await axios.post(
-            'http://upd-party-backend.samesoft.app/api/members/sms',
+            'https://upd-party-backend.samesoft.app/api/members/sms',
             { phoneNumber: formattedPhone, message: message }
           );
 
