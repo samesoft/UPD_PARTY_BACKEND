@@ -201,3 +201,31 @@ exports.getMemberEvents = async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch events for the member' });
     }
 };
+
+exports.verifyTicket = async (req, res) => {
+  const { qr_code } = req.query;
+  console.log(qr_code);
+
+  if (!qr_code || !qr_code.includes('/')) {
+    return res.status(400).json({ error: 'Invalid QR code format' });
+  }
+
+  try {
+    const result = await sequelize.query(
+      'SELECT * FROM event_member_get_details(:qr_code)',
+      {
+        replacements: { qr_code },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'No event or member found with the provided QR code' });
+    }
+
+    res.status(200).json(result[0]);
+  } catch (error) {
+    console.error('Error verifying ticket:', error);
+    res.status(500).json({ error: 'Failed to verify ticket' });
+  }
+}

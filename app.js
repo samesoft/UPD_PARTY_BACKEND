@@ -18,15 +18,13 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // CORS Configuration
-// const corsOptions = {
-//   origin: [
-//     'https://mgsfrontapp.samesoft.app',
-//     'http://localhost:5173',
-//   ],
-//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-//   allowedHeaders: ['Content-Type', 'Authorization'],
-// };
-app.use(cors());
+const corsOptions = {
+  origin: 
+    '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+app.use(cors(corsOptions));
 
 // Check database connection
 sequelize
