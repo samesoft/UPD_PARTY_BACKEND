@@ -75,6 +75,7 @@ exports.createMember = async (req, res) => {
       party_role = '', // default if missing
       memb_level_id,
       district_id,
+      state_id, // new field
       age_group_id,
       edu_level_id,
       party_role_id,
@@ -92,9 +93,9 @@ exports.createMember = async (req, res) => {
     const saltRounds = 10; // Number of salt rounds for bcrypt
     const password_hashed = await bcrypt.hash(password_hash, saltRounds);
 
-    // Use SELECT instead of CALL to match the function usage in addMember
+    // Note: Ensure your SQL function signature is updated to include p_state_id
     const result = await sequelize.query(
-      'SELECT create_member(:first_name, :last_name, :email, :password_hash, :middle_name, :mobile, :memb_level_id, :district_id, :age_group_id, :edu_level_id, :party_role_id, :party_role, :gender, :role_id)',
+      'SELECT create_member(:first_name, :last_name, :email, :password_hash, :middle_name, :mobile, :memb_level_id, :district_id, :state_id, :age_group_id, :edu_level_id, :party_role_id, :party_role, :gender, :role_id)',
       {
         replacements: {
           first_name,
@@ -105,6 +106,7 @@ exports.createMember = async (req, res) => {
           mobile,
           memb_level_id,
           district_id,
+          state_id, // pass the new state_id
           age_group_id,
           edu_level_id,
           party_role_id,
@@ -115,14 +117,15 @@ exports.createMember = async (req, res) => {
         type: sequelize.QueryTypes.SELECT,
       }
     );
-    const newMemberId = result[0].member_id;
 
+    const newMemberId = result[0].member_id;
     res.status(201).json({ message: 'Member created successfully', member_id: newMemberId });
   } catch (error) {
     console.log('Error creating member:', error);
     res.status(500).json({ error: 'Failed to create member' });
   }
 };
+
 
 
 
