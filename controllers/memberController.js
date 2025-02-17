@@ -72,19 +72,20 @@ exports.createMember = async (req, res) => {
       password_hash,
       middle_name,
       mobile,
-      party_role,
+      party_role = '', // default if missing
       memb_level_id,
       district_id,
       age_group_id,
       edu_level_id,
       party_role_id,
       gender,
-      role_id
+      role_id = 1, // default if missing
     } = req.body;
+
     console.log("body: ", req.body);
 
     // Basic validation (adjust as needed)
-    if (!first_name || !last_name || !email || !password_hash || !role_id) {
+    if (!first_name || !last_name || !password_hash) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -109,20 +110,20 @@ exports.createMember = async (req, res) => {
           party_role_id,
           party_role,
           gender,
-          role_id
+          role_id,
         },
-        type: sequelize.QueryTypes.SELECT, // Use SELECT to match function usage
+        type: sequelize.QueryTypes.SELECT,
       }
     );
     const newMemberId = result[0].member_id;
 
-    // Return the first result (if any)
     res.status(201).json({ message: 'Member created successfully', member_id: newMemberId });
   } catch (error) {
-    console.error('Error creating member:', error);
+    console.log('Error creating member:', error);
     res.status(500).json({ error: 'Failed to create member' });
   }
 };
+
 
 
 // Retrieve a member by id
@@ -334,13 +335,13 @@ exports.verifyOtp = async (req, res) => {
       }
     );
 
-    
+
 
     // Check if the result is empty
     if (!results || results.length === 0) {
       return res.status(400).json({ error: 'Incorrect OTP' });
     }
-   console.log("This is the otp",results);
+    console.log("This is the otp", results);
     const { otp: storedOtp, expiry_time: expiryTime } = results;
 
     // Verify if OTP matches
