@@ -349,7 +349,7 @@ exports.verifyOtp = async (req, res) => {
     }
 
     // Check if OTP is expired
-    const currentTime = new Date();
+    const currentTime = new Date().toISOString(); // Convert current time to UTC ISO format
     if (currentTime > new Date(expiryTime)) {
       return res.status(400).json({ error: 'OTP has expired' });
     }

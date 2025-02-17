@@ -11,6 +11,7 @@ router.get('/:id', eventController.getEventsByDistrict);
 router.post('/register', eventController.registerToEvent);
 router.delete('/:id', eventController.deleteEvent);
 router.get('/active/registered', eventController.getRegisteredEvents);
+router.get('/ticket/verify-ticket', eventController.verifyTicket);
 
 
 
