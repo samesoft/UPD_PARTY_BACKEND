@@ -118,6 +118,7 @@ exports.createMember = async (req, res) => {
       }
     );
 
+    
     const newMemberId = result[0].member_id;
     res.status(201).json({ message: 'Member created successfully', member_id: newMemberId });
   } catch (error) {

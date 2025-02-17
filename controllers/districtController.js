@@ -21,6 +21,30 @@ exports.getAllDistricts = async (req, res) => {
     }
 };
 
+
+exports.getDistrictsByState = async (req, res) => {
+    try {
+        // Assuming state_id is passed as a route parameter, e.g., GET /districts/state/:state_id
+        const { state_id } = req.params;
+
+        const districts = await sequelize.query(
+            `SELECT d.*
+         FROM district d
+         INNER JOIN region r ON d.regionid = r.regionid
+         WHERE r.stateid = :state_id`,
+            {
+                replacements: { state_id },
+                type: sequelize.QueryTypes.SELECT,
+            }
+        );
+
+        res.status(200).json({ data: districts });
+    } catch (error) {
+        console.error('Error fetching districts:', error);
+        res.status(500).json({ error: 'Failed to fetch districts' });
+    }
+};
+
 // Update a District
 exports.updateDistrict = async (req, res) => {
     try {
@@ -32,7 +56,7 @@ exports.updateDistrict = async (req, res) => {
         }
 
         await sequelize.query(
-            'SELECT district_update(:district_id, :district, :region_id)', 
+            'SELECT district_update(:district_id, :district, :region_id)',
             {
                 replacements: { district_id: id, district, region_id: regionid },
                 type: sequelize.QueryTypes.SELECT,
