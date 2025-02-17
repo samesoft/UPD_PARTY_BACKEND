@@ -311,15 +311,17 @@ exports.requestOtp = async (req, res) => {
 };
 
 exports.verifyOtp = async (req, res) => {
-
   console.log(req.body);
-  const { phoneNumber, otp } = req.body;
-
-
+  let { phoneNumber, otp } = req.body;
 
   if (!phoneNumber || !otp) {
     return res.status(400).json({ error: 'Phone number and OTP are required' });
   }
+
+  // Remove +252 if it exists at the beginning
+  const cleanedPhoneNumber = phoneNumber.startsWith('+252')
+    ? phoneNumber.replace('+252', '')
+    : phoneNumber;
 
   try {
     // Call the PostgreSQL function to fetch the OTP record
@@ -327,20 +329,19 @@ exports.verifyOtp = async (req, res) => {
       'SELECT * FROM member_get_otp(:mobile, :otp)',
       {
         replacements: {
-          mobile: phoneNumber,
+          mobile: cleanedPhoneNumber, // Use the cleaned phone number
           otp: otp,
         },
         type: sequelize.QueryTypes.SELECT,
       }
     );
 
-    
-
     // Check if the result is empty
     if (!results || results.length === 0) {
       return res.status(400).json({ error: 'Incorrect OTP' });
     }
-   console.log("This is the otp",results);
+
+    console.log('This is the OTP:', results);
     const { otp: storedOtp, expiry_time: expiryTime } = results;
 
     // Verify if OTP matches
@@ -350,7 +351,7 @@ exports.verifyOtp = async (req, res) => {
 
     // Check if OTP is expired
     const currentTime = new Date().toISOString(); // Convert current time to UTC ISO format
-    if (currentTime > new Date(expiryTime)) {
+    if (new Date(currentTime) > new Date(expiryTime)) {
       return res.status(400).json({ error: 'OTP has expired' });
     }
 
@@ -362,6 +363,7 @@ exports.verifyOtp = async (req, res) => {
     return res.status(500).json({ error: 'Failed to verify OTP' });
   }
 };
+
 
 exports.loginMember = async (req, res) => {
   try {
