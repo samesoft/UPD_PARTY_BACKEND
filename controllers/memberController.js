@@ -347,6 +347,54 @@ exports.requestOtp = async (req, res) => {
   }
 };
 
+exports.requestOtpForReset = async (req, res) => {
+  const { phoneNumber } = req.body;
+
+  console.log("Phone number: ", phoneNumber);
+
+  if (!phoneNumber) {
+    return res.status(400).json({ error: 'Phone number is required' });
+  }
+
+  // Clean the phone number (remove +252 if it exists)
+  const cleanedPhoneNumber = phoneNumber.startsWith('+252') ? phoneNumber.slice(4) : phoneNumber;
+  console.log("Original Phone Number: ", phoneNumber);
+  console.log("Cleaned Phone Number: ", cleanedPhoneNumber);
+
+  try {
+    // Generate OTP (6-digit random number)
+    const otp = crypto.randomInt(100000, 999999).toString();
+
+    // Set OTP expiry time (e.g., 5 minutes)
+    const expiryTime = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
+
+    // Save OTP to the database using the PostgreSQL function
+    await sequelize.query(
+      'SELECT member_add_otp(:mobile, :otp, :expiry_time)',
+      {
+        replacements: {
+          mobile: cleanedPhoneNumber,
+          otp: otp,
+          expiry_time: expiryTime,
+        },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    // Send OTP to the phone number via /owners/sms
+    await axios.post(
+      'https://mgs-backend-api.samesoft.app/api/owners/sms',
+      { phoneNumber: phoneNumber, message: `Your verification code is: ${otp}` }
+    );
+
+    console.log("THIS IS THE OTP:", otp);
+    res.status(200).json({ success: 'OTP sent successfully' });
+  } catch (error) {
+    console.error('Error sending OTP:', error);
+    res.status(500).json({ error: 'Failed to send OTP' });
+  }
+};
+
 exports.verifyOtp = async (req, res) => {
   console.log(req.body);
   let { phoneNumber, otp } = req.body;
@@ -453,6 +501,75 @@ exports.loginMember = async (req, res) => {
     console.error('Error logging in:', error);
     res.status(500).json({ error: 'Failed to log in', details: error.message });  }
 };
+
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { mobile, new_password, otp } = req.body;
+    
+    if (!mobile || !new_password || !otp) {
+      return res.status(400).json({ error: 'Mobile number, new password, and OTP are required' });
+    }
+
+    // Clean the phone number by removing +252 if it exists
+    const cleanedPhoneNumber = mobile.startsWith('+252') ? mobile.replace('+252', '') : mobile;
+
+    // Verify OTP
+    const [otpResults] = await sequelize.query(
+      'SELECT * FROM member_get_otp(:mobile, :otp)',
+      {
+        replacements: { mobile: cleanedPhoneNumber, otp },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    if (!otpResults || otpResults.length === 0) {
+      return res.status(400).json({ error: 'Incorrect OTP' });
+    }
+
+    const { otp: storedOtp, expiry_time: expiryTime } = otpResults;
+
+    if (storedOtp !== otp) {
+      return res.status(400).json({ error: 'Incorrect OTP' });
+    }
+
+    const currentTime = new Date().toISOString();
+    if (new Date(currentTime) > new Date(expiryTime)) {
+      return res.status(400).json({ error: 'OTP has expired' });
+    }
+
+    // OTP is valid, proceed with password reset
+    const [existingUser] = await sequelize.query(
+      `SELECT member_id FROM members WHERE mobile = :mobile`,
+      {
+        replacements: { mobile: cleanedPhoneNumber },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    if (!existingUser) {
+      return res.status(404).json({ error: 'Member with this phone number does not exist' });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+
+    // Update the password in the database
+    await sequelize.query(
+      `UPDATE members SET password_hash = :hashedPassword WHERE mobile = :mobile`,
+      {
+        replacements: { hashedPassword, mobile: cleanedPhoneNumber },
+        type: sequelize.QueryTypes.UPDATE,
+      }
+    );
+
+    res.status(200).json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ error: 'Failed to reset password', details: error.message });
+  }
+};
+
 
 
 exports.createDonation = async (req, res) => {
