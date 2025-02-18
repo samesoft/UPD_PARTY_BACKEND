@@ -295,11 +295,25 @@ exports.requestOtp = async (req, res) => {
     return res.status(400).json({ error: 'Phone number is required' });
   }
 
+  // Clean the phone number (remove +252 if it exists)
   const cleanedPhoneNumber = phoneNumber.startsWith('+252') ? phoneNumber.slice(4) : phoneNumber;
   console.log("Original Phone Number: ", phoneNumber);
   console.log("Cleaned Phone Number: ", cleanedPhoneNumber);
 
   try {
+    // Check if the cleaned phone number exists in the members table
+    const existingMember = await sequelize.query(
+      'SELECT * FROM members WHERE mobile = :cleanedPhoneNumber',
+      {
+        replacements: { cleanedPhoneNumber },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    if (existingMember.length > 0) {
+      return res.status(400).json({ error: "You're already registered, please login to continue" });
+    }
+
     // Generate OTP (6-digit random number)
     const otp = crypto.randomInt(100000, 999999).toString();
 
@@ -324,7 +338,8 @@ exports.requestOtp = async (req, res) => {
       'https://mgs-backend-api.samesoft.app/api/owners/sms',
       { phoneNumber: phoneNumber, message: `Your verification code is: ${otp}` }
     );
-    console.log("THIS IS THE OYP:", otp);
+
+    console.log("THIS IS THE OTP:", otp);
     res.status(200).json({ success: 'OTP sent successfully' });
   } catch (error) {
     console.error('Error sending OTP:', error);
