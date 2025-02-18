@@ -37,7 +37,7 @@ exports.getDistrictsByState = async (req, res) => {
                 type: sequelize.QueryTypes.SELECT,
             }
         );
-
+        console.log(districts);
         res.status(200).json({ data: districts });
     } catch (error) {
         console.error('Error fetching districts:', error);
