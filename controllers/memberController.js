@@ -86,14 +86,32 @@ exports.createMember = async (req, res) => {
     console.log("body: ", req.body);
 
     // Basic validation (adjust as needed)
-    if (!first_name || !last_name || !password_hash) {
+    if (!first_name || !last_name || !password_hash || !mobile) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Clean the mobile number if it starts with +252
+    const cleanedPhoneNumber = mobile.startsWith('+252') ? mobile.slice(4) : mobile;
+
+
+    // Check if a user with the cleaned mobile number already exists
+    const existingMember = await sequelize.query(
+      'SELECT * FROM members WHERE mobile = :cleanedPhoneNumber',
+      {
+        replacements: { cleanedPhoneNumber },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    if (existingMember.length > 0) {
+      return res.status(400).json({ error: "You're already registered, please login to continue" });
+    }
+
+    // Hash the password
     const saltRounds = 10; // Number of salt rounds for bcrypt
     const password_hashed = await bcrypt.hash(password_hash, saltRounds);
 
-    // Note: Ensure your SQL function signature is updated to include p_state_id
+    // Create the member
     const result = await sequelize.query(
       'SELECT create_member(:first_name, :last_name, :email, :password_hash, :middle_name, :mobile, :memb_level_id, :district_id, :state_id, :age_group_id, :edu_level_id, :party_role_id, :party_role, :gender, :role_id)',
       {
@@ -103,7 +121,7 @@ exports.createMember = async (req, res) => {
           email,
           password_hash: password_hashed,
           middle_name,
-          mobile,
+          mobile: cleanedPhoneNumber, // Use the cleaned mobile number
           memb_level_id,
           district_id,
           state_id, // pass the new state_id
@@ -118,7 +136,6 @@ exports.createMember = async (req, res) => {
       }
     );
 
-    
     const newMemberId = result[0].member_id;
     res.status(201).json({ message: 'Member created successfully', member_id: newMemberId });
   } catch (error) {
