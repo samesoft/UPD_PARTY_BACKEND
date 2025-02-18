@@ -90,6 +90,29 @@ exports.getAllStates = async (req, res) => {
     }
 };
 
+exports.getAllStates1 = async (req, res) => {
+    try {
+        // Execute the stored function without pagination parameters
+        const result = await sequelize.query(
+            'SELECT * FROM state_get_all1()',
+            {
+                type: sequelize.QueryTypes.SELECT,
+            }
+        );
+
+        // Check if results exist
+        if (!result || result.length === 0) {
+            return res.status(404).json({ error: 'No states found' });
+        }
+
+        res.status(200).json({ data: result });
+    } catch (error) {
+        console.error('Error fetching states:', error);
+        res.status(500).json({ error: 'Failed to fetch states' });
+    }
+};
+
+
 
 exports.deleteState = async (req, res) => {
     try {

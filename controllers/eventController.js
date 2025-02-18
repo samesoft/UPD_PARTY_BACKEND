@@ -33,7 +33,7 @@ exports.createEvent = async (req, res) => {
         const newEventId = result[0].create_event;
         res.status(201).json({ message: 'Event created successfully', event_id: newEventId });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create event' });
+        res.status(500).json({ error: 'Failed to create event', details: error.details});
     }
 };
 
@@ -203,10 +203,10 @@ exports.getMemberEvents = async (req, res) => {
 };
 
 exports.verifyTicket = async (req, res) => {
-  const { qr_code } = req.query;
-  console.log(qr_code);
+  const { qrcode } = req.query;
+  console.log("qrcode", qrcode);
 
-  if (!qr_code || !qr_code.includes('/')) {
+  if (!qrcode || !qrcode.includes('/')) {
     return res.status(400).json({ error: 'Invalid QR code format' });
   }
 
@@ -214,7 +214,7 @@ exports.verifyTicket = async (req, res) => {
     const result = await sequelize.query(
       'SELECT * FROM event_member_get_details(:qr_code)',
       {
-        replacements: { qr_code },
+        replacements: { qr_code: qrcode },
         type: sequelize.QueryTypes.SELECT,
       }
     );

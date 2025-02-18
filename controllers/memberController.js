@@ -305,7 +305,7 @@ exports.requestOtp = async (req, res) => {
     // Send OTP to the phone number via /owners/sms
     await axios.post(
       'https://mgs-backend-api.samesoft.app/api/owners/sms',
-      { phoneNumber: phoneNumber, message: `Your OTP is ${otp}` }
+      { phoneNumber: phoneNumber, message: `Your verification code is: ${otp}` }
     );
     console.log("THIS IS THE OYP:", otp);
     res.status(200).json({ success: 'OTP sent successfully' });
