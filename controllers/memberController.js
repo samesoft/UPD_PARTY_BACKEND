@@ -498,8 +498,7 @@ exports.verifyOtp = async (req, res) => {
 
 exports.loginMember = async (req, res) => {
   try {
-    console.log(req.body);
-    const { mobile, password_hash } = req.body;
+    const { mobile, password_hash, device_token } = req.body;
     console.log(req.body);
 
     // Query with join: get member details and role_name from roles table.
@@ -527,14 +526,25 @@ exports.loginMember = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Create a JWT token (optionally add member info as payload)
+    // Update device token if provided
+    if (device_token) {
+      await sequelize.query(
+        `UPDATE members SET device_token = :device_token WHERE member_id = :member_id`,
+        {
+          replacements: { device_token, member_id: member.member_id },
+          type: sequelize.QueryTypes.UPDATE,
+        }
+      );
+    }
+
+    // Create a JWT token
     const token = jwt.sign(
       { member_id: member.member_id, role_id: member.role_id },
       process.env.TOKEN_KEY,
       { expiresIn: '2h' }
     );
 
-    // Respond with token, member_id, role_id and the role_name from the roles table.
+    // Respond with token, member_id, role_id, and role_name
     res.status(200).json({
       message: 'Login successful',
       token: token,
@@ -542,7 +552,7 @@ exports.loginMember = async (req, res) => {
       role_id: member.role_id,
       state_id: member.state_id,
       role_name: member.role_name,
-      district_id: member.district_id
+      district_id: member.district_id,
     });
   } catch (error) {
     console.error('Error logging in:', error);

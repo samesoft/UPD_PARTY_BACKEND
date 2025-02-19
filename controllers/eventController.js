@@ -1,12 +1,49 @@
 const { sequelize } = require('../config/dbConfig');
+const axios = require('axios');
+
+// exports.createEvent = async (req, res) => {
+//     console.log(req.body);
+//     try {
+//         const { title, district_id, description, location, start_time, end_time, created_by_member_id } = req.body;
+//         // if (!title || district_id || !description || !location || !start_time || !end_time || !created_by_member_id) {
+//         //     return res.status(400).json({ error: 'Missing required fields' });
+//         // }
+//         const result = await sequelize.query(
+//             `SELECT event_create(
+//                 :title::varchar, 
+//                 :district_id::integer, 
+//                 :description::text, 
+//                 :location::varchar, 
+//                 :start_time::timestamp, 
+//                 :end_time::timestamp, 
+//                 :created_by_member_id::integer
+//               )`,
+//             {
+//                 replacements: {
+//                     title,
+//                     district_id,           // This should be a valid integer
+//                     description,
+//                     location,
+//                     start_time,            // Should be in a valid timestamp format, e.g., "2025-02-14T16:23:00"
+//                     end_time,              // Should be in a valid timestamp format
+//                     created_by_member_id   // Valid integer
+//                 },
+//                 type: sequelize.QueryTypes.SELECT,
+//             }
+//         );
+//         const newEventId = result[0].create_event;
+//         res.status(201).json({ message: 'Event created successfully', event_id: newEventId });
+//     } catch (error) {
+//         res.status(500).json({ error: 'Failed to create event', details: error.details });
+//     }
+// };
 
 exports.createEvent = async (req, res) => {
     console.log(req.body);
     try {
         const { title, district_id, description, location, start_time, end_time, created_by_member_id } = req.body;
-        // if (!title || district_id || !description || !location || !start_time || !end_time || !created_by_member_id) {
-        //     return res.status(400).json({ error: 'Missing required fields' });
-        // }
+
+        // Create the event
         const result = await sequelize.query(
             `SELECT event_create(
                 :title::varchar, 
@@ -16,26 +53,62 @@ exports.createEvent = async (req, res) => {
                 :start_time::timestamp, 
                 :end_time::timestamp, 
                 :created_by_member_id::integer
-              )`,
+              ) AS event_id`,
             {
-                replacements: {
-                    title,
-                    district_id,           // This should be a valid integer
-                    description,
-                    location,
-                    start_time,            // Should be in a valid timestamp format, e.g., "2025-02-14T16:23:00"
-                    end_time,              // Should be in a valid timestamp format
-                    created_by_member_id   // Valid integer
-                },
+                replacements: { title, district_id, description, location, start_time, end_time, created_by_member_id },
                 type: sequelize.QueryTypes.SELECT,
             }
         );
-        const newEventId = result[0].create_event;
-        res.status(201).json({ message: 'Event created successfully', event_id: newEventId });
+
+        const newEventId = result[0].event_id;
+
+        // Fetch event details including state ID
+        const eventDetails = await sequelize.query(
+            `SELECT e.*, d.stateid, d.district
+             FROM events e
+             INNER JOIN district d ON e.ditrict_id = d.district_id
+             WHERE e.id = :event_id`,
+            {
+                replacements: { event_id: newEventId },
+                type: sequelize.QueryTypes.SELECT,
+            }
+        );
+
+        if (!eventDetails.length) {
+            return res.status(404).json({ error: "Event not found after creation" });
+        }
+
+        const event = eventDetails[0];
+
+        // Fetch members from the same state
+        const members = await sequelize.query(
+            `SELECT * FROM members WHERE state_id = :state_id`,
+            {
+                replacements: { state_id: event.stateid },
+                type: sequelize.QueryTypes.SELECT,
+            }
+        );
+
+        // Call Firebase function to send notifications
+        const firebaseResponse = await axios.post(
+            "https://sendneweventcreationnotification-tknl5zbesa-uc.a.run.app",
+            { members, event }
+        );
+        console.log("firebaseResponse: ", firebaseResponse.data);
+
+        res.status(201).json({
+            message: "Event created successfully",
+            event_id: newEventId,
+            firebase_response: firebaseResponse.data
+        });
+
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create event', details: error.details });
+        console.error("Error creating event:", error);
+        res.status(500).json({ error: "Failed to create event", details: error.message });
     }
 };
+
+
 exports.getEventsByState = async (req, res) => {
     try {
       const { state_id } = req.params;
