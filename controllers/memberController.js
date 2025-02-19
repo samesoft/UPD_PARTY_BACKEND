@@ -3,66 +3,104 @@ const bcrypt = require('bcrypt'); // Import bcrypt for password hashing
 const crypto = require('crypto');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
+const path = require('path');
+const fs = require('fs');
+;
 
+exports.updateMemberProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      first_name,
+      last_name,
+      email,
+      mobile,
+      state_id,
+      district_id,
+      age_group_id,
+      edu_level_id,
+      party_role_id,
+      memb_level_id,
+    } = req.body;
 
+    console.log("Update request received for member:", id);
+    console.log("Request file:", req.file);
+    console.log("Request body:", req.body);
 
-// Create a new member using the stored procedure "member_create"
-// exports.createMember = async (req, res) => {
-//   try {
-//     const {
-//       first_name,
-//       last_name,
-//       email,
-//       password_hash,
-//       middle_name,
-//       mobile,
-//       memb_level_id,
-//       district_id,
-//       age_group_id,
-//       edu_level_id,
-//       party_role_id,
-//       gender,
-//     } = req.body;
-//     console.log("body: ", req.body);
+    if (!id) {
+      return res.status(400).json({ error: "Member ID is required" });
+    }
 
-//     // Basic validation (adjust as needed)
-//     if (!first_name || !last_name || !email || !password_hash) {
-//       return res.status(400).json({ error: 'Missing required fields' });
-//     }
+    // Validate required fields
+    if (!first_name || !last_name || !email || !mobile) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
 
-//     const saltRounds = 10; // Number of salt rounds for bcrypt
-//     const password_hashed = await bcrypt.hash(password_hash, saltRounds);
-//     // Call the stored procedure to create a new member.
-//     // If you are not using a stored procedure, you can insert directly into the table.
-//     const result = await sequelize.query(
-//       'CALL member_create(:p_first_name, :p_last_name, :p_email, :p_password_hash, :p_middle_name, :p_mobile, :p_memb_level_id, :p_district_id, :p_age_group_id, :p_edu_level_id, :p_party_role_id, :p_gender)',
-//       {
-//         replacements: {
-//           p_first_name: first_name,
-//           p_last_name: last_name,
-//           p_email: email,
-//           p_password_hash: password_hashed,
-//           p_middle_name: middle_name,
-//           p_mobile: mobile,
-//           p_memb_level_id: memb_level_id,
-//           p_district_id: district_id,
-//           p_age_group_id: age_group_id,
-//           p_edu_level_id: edu_level_id,
-//           p_party_role_id: party_role_id,
-//           p_gender: gender,
-//         },
-//         // Using SELECT since the stored procedure returns a result set.
-//         type: sequelize.QueryTypes.SELECT,
-//       }
-//     );
-//     // result is an array containing the inserted row.
-//     res.status(201).json(result[0]);
-//   } catch (error) {
-//     console.error('Error creating member:', error);
-//     res.status(500).json({ error: 'Failed to create member' });
-//   }
-// };
+    // Fetch existing profile data
+    const [existingData] = await sequelize.query(
+      `SELECT profile_photo_url FROM members WHERE member_id = :id`,
+      {
+        replacements: { id },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
 
+    if (!existingData) {
+      return res.status(404).json({ error: "Member not found" });
+    }
+
+    let profilePhotoUrl = existingData.profile_photo_url;
+
+    // Handle new profile photo upload
+    if (req.file) {
+      profilePhotoUrl = `/uploads/profile-photos/${req.file.filename}`;
+
+      // Optional: Delete old profile photo from the server
+      if (existingData.profile_photo_url) {
+        const oldPhotoPath = path.join(__dirname, '..', 'uploads', existingData.profile_photo_url);
+        if (fs.existsSync(oldPhotoPath)) {
+          fs.unlinkSync(oldPhotoPath);
+        }
+      }
+    }
+
+    // Update Member Data
+    const [updated] = await sequelize.query(
+      `UPDATE members 
+       SET first_name = :first_name, last_name = :last_name, email = :email, 
+           mobile = :mobile, profile_photo_url = :profile_photo_url,
+           state_id = :state_id, district_id = :district_id, age_group_id = :age_group_id, 
+           edu_level_id = :edu_level_id, party_role_id = :party_role_id, memb_level_id = :memb_level_id
+       WHERE member_id = :id`,
+      {
+        replacements: {
+          first_name,
+          last_name,
+          email,
+          mobile,
+          profile_photo_url: profilePhotoUrl,
+          state_id: state_id || null,
+          district_id: district_id || null,
+          age_group_id: age_group_id || null,
+          edu_level_id: edu_level_id || null,
+          party_role_id: party_role_id || null,
+          memb_level_id: memb_level_id || null,
+          id,
+        },
+        type: sequelize.QueryTypes.UPDATE,
+      }
+    );
+
+    if (updated === 0) {
+      return res.status(404).json({ error: "No changes made or member not found" });
+    }
+
+    res.status(200).json({ message: "Profile updated successfully", profilePhotoUrl });
+  } catch (error) {
+    console.error("Error updating member profile:", error);
+    res.status(500).json({ error: "Failed to update profile. Please try again later." });
+  }
+};
 exports.createMember = async (req, res) => {
   try {
     const {
@@ -154,19 +192,26 @@ exports.getMember = async (req, res) => {
     if (!id) {
       return res.status(400).json({ error: 'Missing member id' });
     }
-    const result = await sequelize.query('SELECT * FROM members WHERE member_id = :id', {
-      replacements: { id },
-      type: sequelize.QueryTypes.SELECT,
-    });
+
+    const result = await sequelize.query(
+      'SELECT * FROM member_get_details(:id)', 
+      {
+        replacements: { id },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
     if (!result || result.length === 0) {
       return res.status(404).json({ error: 'Member not found' });
     }
-    res.status(200).json(result[0]);
+
+    res.status(200).json({data: result[0]});
   } catch (error) {
     console.error('Error retrieving member:', error);
     res.status(500).json({ error: 'Failed to retrieve member' });
   }
 };
+
 
 // Retrieve all members with optional pagination
 exports.getAllMembers = async (req, res) => {
@@ -267,6 +312,7 @@ exports.updateMember = async (req, res) => {
     res.status(500).json({ error: 'Failed to update member' });
   }
 };
+
 
 // Delete a member
 exports.deleteMember = async (req, res) => {
