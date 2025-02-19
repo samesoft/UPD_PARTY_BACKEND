@@ -8,9 +8,11 @@ router.get('/', memberController.getAllMembers);
 router.put('/:id', memberController.updateMember);
 router.delete('/:id', memberController.deleteMember);
 router.post('/requestOtp', memberController.requestOtp);
+router.post('/requestOtpForReset', memberController.requestOtpForReset);
 router.post('/verify-otp', memberController.verifyOtp);
 router.post('/sms', memberController.sendSMS);
 router.post('/login', memberController.loginMember);
+router.post('/reset-password', memberController.resetPassword);
 router.post('/donation', memberController.createDonation);
 router.get('/payment/requestPayment', memberController.requestPayment);
 
