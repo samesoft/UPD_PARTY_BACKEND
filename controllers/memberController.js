@@ -494,19 +494,21 @@ exports.loginMember = async (req, res) => {
       token: token,
       member_id: member.member_id,
       role_id: member.role_id,
+      state_id: member.state_id,
       role_name: member.role_name,
       district_id: member.district_id
     });
   } catch (error) {
     console.error('Error logging in:', error);
-    res.status(500).json({ error: 'Failed to log in', details: error.message });  }
+    res.status(500).json({ error: 'Failed to log in', details: error.message });
+  }
 };
 
 
 exports.resetPassword = async (req, res) => {
   try {
     const { mobile, new_password, otp } = req.body;
-    
+
     if (!mobile || !new_password || !otp) {
       return res.status(400).json({ error: 'Mobile number, new password, and OTP are required' });
     }

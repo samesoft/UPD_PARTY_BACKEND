@@ -33,9 +33,36 @@ exports.createEvent = async (req, res) => {
         const newEventId = result[0].create_event;
         res.status(201).json({ message: 'Event created successfully', event_id: newEventId });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create event', details: error.details});
+        res.status(500).json({ error: 'Failed to create event', details: error.details });
     }
 };
+exports.getEventsByState = async (req, res) => {
+    try {
+      const { state_id } = req.params;
+  
+      // Join events with district to also fetch the district_name as "district"
+      const events = await sequelize.query(
+        `
+        SELECT e.*, d.district
+        FROM events e
+        INNER JOIN district d 
+          ON e.ditrict_id = d.district_id
+        WHERE d.stateid = :state_id
+        ORDER BY e.ditrict_id;
+        `,
+        {
+          replacements: { state_id },
+          type: sequelize.QueryTypes.SELECT,
+        }
+      );
+  
+      res.status(200).json({ data: events });
+    } catch (error) {
+      console.error("Error fetching events by state:", error);
+      res.status(500).json({ error: "Failed to fetch events" });
+    }
+  };
+  
 
 exports.getAllEvents = async (req, res) => {
     try {
@@ -203,29 +230,29 @@ exports.getMemberEvents = async (req, res) => {
 };
 
 exports.verifyTicket = async (req, res) => {
-  const { qrcode } = req.query;
-  console.log("qrcode", qrcode);
+    const { qrcode } = req.query;
+    console.log("qrcode", qrcode);
 
-  if (!qrcode || !qrcode.includes('/')) {
-    return res.status(400).json({ error: 'Invalid QR code format' });
-  }
-
-  try {
-    const result = await sequelize.query(
-      'SELECT * FROM event_member_get_details(:qr_code)',
-      {
-        replacements: { qr_code: qrcode },
-        type: sequelize.QueryTypes.SELECT,
-      }
-    );
-
-    if (result.length === 0) {
-      return res.status(404).json({ error: 'No event or member found with the provided QR code' });
+    if (!qrcode || !qrcode.includes('/')) {
+        return res.status(400).json({ error: 'Invalid QR code format' });
     }
 
-    res.status(200).json(result[0]);
-  } catch (error) {
-    console.error('Error verifying ticket:', error);
-    res.status(500).json({ error: 'Failed to verify ticket' });
-  }
+    try {
+        const result = await sequelize.query(
+            'SELECT * FROM event_member_get_details(:qr_code)',
+            {
+                replacements: { qr_code: qrcode },
+                type: sequelize.QueryTypes.SELECT,
+            }
+        );
+
+        if (result.length === 0) {
+            return res.status(404).json({ error: 'No event or member found with the provided QR code' });
+        }
+
+        res.status(200).json(result[0]);
+    } catch (error) {
+        console.error('Error verifying ticket:', error);
+        res.status(500).json({ error: 'Failed to verify ticket' });
+    }
 }
