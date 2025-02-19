@@ -5,6 +5,7 @@ const nocache = require('nocache');
 const dotenv = require('dotenv');
 const express = require('express');
 const http = require('http');
+const path = require('path');
 
 // Load environment variables from .env file
 dotenv.config();
@@ -48,6 +49,9 @@ const regionRoute = require('./routes/regionRoute');
 const educationLevelRoute = require('./routes/educationLevelRoute');
 const usersRoute = require('./routes/userRoute');
 const eventRoute = require('./routes/eventRoute');
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 app.use('/api/membership-level', membershipLevelRoute);
 app.use('/api/state', stateRoute);
