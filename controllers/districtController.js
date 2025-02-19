@@ -22,28 +22,52 @@ exports.getAllDistricts = async (req, res) => {
 };
 
 
+// exports.getDistrictsByState = async (req, res) => {
+//     try {
+//         // Assuming state_id is passed as a route parameter, e.g., GET /districts/state/:state_id
+//         const { state_id } = req.params;
+
+//         const districts = await sequelize.query(
+//             `SELECT d.*
+//          FROM district d
+//          INNER JOIN region r ON d.regionid = r.regionid
+//          WHERE r.stateid = :state_id`,
+//             {
+//                 replacements: { state_id },
+//                 type: sequelize.QueryTypes.SELECT,
+//             }
+//         );
+//         console.log(districts);
+//         res.status(200).json({ data: districts });
+//     } catch (error) {
+//         console.error('Error fetching districts:', error);
+//         res.status(500).json({ error: 'Failed to fetch districts' });
+//     }
+// };
+
 exports.getDistrictsByState = async (req, res) => {
     try {
-        // Assuming state_id is passed as a route parameter, e.g., GET /districts/state/:state_id
-        const { state_id } = req.params;
-
-        const districts = await sequelize.query(
-            `SELECT d.*
+      // state_id is passed as a route parameter, e.g., GET /districts/state/:state_id
+      const { state_id } = req.params;
+  
+      const districts = await sequelize.query(
+        `SELECT d.*
          FROM district d
-         INNER JOIN region r ON d.regionid = r.regionid
-         WHERE r.stateid = :state_id`,
-            {
-                replacements: { state_id },
-                type: sequelize.QueryTypes.SELECT,
-            }
-        );
-        console.log(districts);
-        res.status(200).json({ data: districts });
+         WHERE d.state_id = :state_id`,
+        {
+          replacements: { state_id },
+          type: sequelize.QueryTypes.SELECT,
+        }
+      );
+  
+      console.log(districts);
+      res.status(200).json({ data: districts });
     } catch (error) {
-        console.error('Error fetching districts:', error);
-        res.status(500).json({ error: 'Failed to fetch districts' });
+      console.error('Error fetching districts:', error);
+      res.status(500).json({ error: 'Failed to fetch districts' });
     }
-};
+  };
+  
 
 // Update a District
 exports.updateDistrict = async (req, res) => {
