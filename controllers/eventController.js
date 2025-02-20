@@ -92,24 +92,27 @@ exports.createEvent = async (req, res) => {
         console.log("event: ", event);
         console.log("members: ", members);
 
-        // Call Firebase function to send notifications
-        const firebaseResponse = await axios.post(
-            "https://sendneweventcreationnotification-tknl5zbesa-uc.a.run.app",
-            { members, event }
-        );
-        console.log("firebaseResponse: ", firebaseResponse.data);
-
+        // Send success response immediately before sending notifications
         res.status(201).json({
             message: "Event created successfully",
-            event_id: newEventId,
-            firebase_response: firebaseResponse.data
+            event_id: newEventId
         });
+
+        // Send notifications in the background (does not block the response)
+        axios.post("https://sendneweventcreationnotification-tknl5zbesa-uc.a.run.app", { members, event })
+            .then((firebaseResponse) => {
+                console.log("Firebase response:", firebaseResponse.data);
+            })
+            .catch((error) => {
+                console.error("Failed to send notifications:", error.message);
+            });
 
     } catch (error) {
         console.error("Error creating event:", error);
         res.status(500).json({ error: "Failed to create event", details: error.message });
     }
 };
+
 
 
 exports.getEventsByState = async (req, res) => {
@@ -170,7 +173,6 @@ exports.getUnregisteredMemberEventsByState = async (req, res) => {
         res.status(500).json({ error: "Failed to fetch events" });
     }
 };
-
 
 
 exports.getAllEvents = async (req, res) => {
