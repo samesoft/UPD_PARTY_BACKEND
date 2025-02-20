@@ -19,7 +19,6 @@ exports.updateMemberProfile = async (req, res) => {
       district_id,
       age_group_id,
       edu_level_id,
-      role_id, // Add role_id
     } = req.body;
 
     console.log("Update request received for member:", id);
@@ -69,7 +68,7 @@ exports.updateMemberProfile = async (req, res) => {
        SET first_name = :first_name, last_name = :last_name, email = :email, 
            mobile = :mobile, profile_photo_url = :profile_photo_url,
            state_id = :state_id, district_id = :district_id, age_group_id = :age_group_id, 
-           edu_level_id = :edu_level_id, role_id = :role_id
+           edu_level_id = :edu_level_id
        WHERE member_id = :id`,
       {
         replacements: {
@@ -82,7 +81,6 @@ exports.updateMemberProfile = async (req, res) => {
           district_id: district_id || null,
           age_group_id: age_group_id || null,
           edu_level_id: edu_level_id || null,
-          role_id: role_id || null, // Add role_id
           id,
         },
         type: sequelize.QueryTypes.UPDATE,
