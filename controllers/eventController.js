@@ -82,12 +82,15 @@ exports.createEvent = async (req, res) => {
 
         // Fetch members from the same state
         const members = await sequelize.query(
-            `SELECT * FROM members WHERE state_id = :state_id`,
+            `SELECT * FROM members WHERE state_id = :state_id AND role_id != 1`,
             {
                 replacements: { state_id: event.stateid },
                 type: sequelize.QueryTypes.SELECT,
             }
         );
+
+        console.log("event: ", event);
+        console.log("members: ", members);
 
         // Call Firebase function to send notifications
         const firebaseResponse = await axios.post(
