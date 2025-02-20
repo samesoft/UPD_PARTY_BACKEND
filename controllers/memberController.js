@@ -534,10 +534,13 @@ exports.loginMember = async (req, res) => {
       { expiresIn: '2h' }
     );
 
+    console.log(member);
+
     // Respond with token, member_id, role_id and the role_name from the roles table.
     res.status(200).json({
       message: 'Login successful',
       token: token,
+      member:member,
       member_id: member.member_id,
       role_id: member.role_id,
       state_id: member.state_id,
