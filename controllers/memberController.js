@@ -95,7 +95,7 @@ exports.updateMemberProfile = async (req, res) => {
       return res.status(404).json({ error: "No changes made or member not found" });
     }
 
-    res.status(200).json({ message: "Profile updated successfully", profilePhotoUrl });
+    res.status(200).json({ message: "Profile updated successfully", data: { profile_photo_url: profilePhotoUrl }});
   } catch (error) {
     console.error("Error updating member profile:", error);
     res.status(500).json({ error: "Failed to update profile. Please try again later." });
