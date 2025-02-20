@@ -49,6 +49,7 @@ const regionRoute = require('./routes/regionRoute');
 const educationLevelRoute = require('./routes/educationLevelRoute');
 const usersRoute = require('./routes/userRoute');
 const eventRoute = require('./routes/eventRoute');
+const roleRoute = require('./routes/roleRoute');
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -63,6 +64,7 @@ app.use('/api/region', regionRoute);
 app.use('/api/education-level', educationLevelRoute);
 app.use('/api/users',usersRoute);
 app.use('/api/events', eventRoute);
+app.use('/api/roles', roleRoute);
 
 // Version endpoint (optional)
 app.get('/version', (req, res) => {

@@ -114,11 +114,11 @@ exports.createEvent = async (req, res) => {
 
 exports.getEventsByState = async (req, res) => {
     try {
-      const { state_id } = req.params;
-  
-      // Join events with district to also fetch the district_name as "district"
-      const events = await sequelize.query(
-        `
+        const { state_id } = req.params;
+
+        // Join events with district to also fetch the district_name as "district"
+        const events = await sequelize.query(
+            `
         SELECT e.*, d.district
         FROM events e
         INNER JOIN district d 
@@ -126,19 +126,51 @@ exports.getEventsByState = async (req, res) => {
         WHERE d.stateid = :state_id
         ORDER BY e.ditrict_id;
         `,
-        {
-          replacements: { state_id },
-          type: sequelize.QueryTypes.SELECT,
-        }
-      );
-  
-      res.status(200).json({ data: events });
+            {
+                replacements: { state_id },
+                type: sequelize.QueryTypes.SELECT,
+            }
+        );
+
+        res.status(200).json({ data: events });
     } catch (error) {
-      console.error("Error fetching events by state:", error);
-      res.status(500).json({ error: "Failed to fetch events" });
+        console.error("Error fetching events by state:", error);
+        res.status(500).json({ error: "Failed to fetch events" });
     }
-  };
-  
+};
+
+exports.getUnregisteredMemberEventsByState = async (req, res) => {
+    try {
+        const { state_id } = req.params;
+        const { member_id } = req.query;
+
+        const events = await sequelize.query(
+            `
+        SELECT e.*, d.district
+        FROM events e
+        INNER JOIN district d ON e.ditrict_id = d.district_id
+        WHERE e."Status" = 'Active' 
+        AND d.stateid = :state_id
+        AND e.id NOT IN (
+            SELECT event_id FROM eventregistrations WHERE member_id = :member_id
+            )
+        ORDER BY e.end_time DESC;
+
+        `,
+            {
+                replacements: { state_id, member_id },
+                type: sequelize.QueryTypes.SELECT,
+            }
+        );
+
+        res.status(200).json({ data: events });
+    } catch (error) {
+        console.error("Error fetching events by state:", error);
+        res.status(500).json({ error: "Failed to fetch events" });
+    }
+};
+
+
 
 exports.getAllEvents = async (req, res) => {
     try {

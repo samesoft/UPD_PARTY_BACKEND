@@ -19,8 +19,7 @@ exports.updateMemberProfile = async (req, res) => {
       district_id,
       age_group_id,
       edu_level_id,
-      party_role_id,
-      memb_level_id,
+      role_id, // Add role_id
     } = req.body;
 
     console.log("Update request received for member:", id);
@@ -70,7 +69,7 @@ exports.updateMemberProfile = async (req, res) => {
        SET first_name = :first_name, last_name = :last_name, email = :email, 
            mobile = :mobile, profile_photo_url = :profile_photo_url,
            state_id = :state_id, district_id = :district_id, age_group_id = :age_group_id, 
-           edu_level_id = :edu_level_id, party_role_id = :party_role_id, memb_level_id = :memb_level_id
+           edu_level_id = :edu_level_id, role_id = :role_id
        WHERE member_id = :id`,
       {
         replacements: {
@@ -83,8 +82,7 @@ exports.updateMemberProfile = async (req, res) => {
           district_id: district_id || null,
           age_group_id: age_group_id || null,
           edu_level_id: edu_level_id || null,
-          party_role_id: party_role_id || null,
-          memb_level_id: memb_level_id || null,
+          role_id: role_id || null, // Add role_id
           id,
         },
         type: sequelize.QueryTypes.UPDATE,
@@ -93,7 +91,7 @@ exports.updateMemberProfile = async (req, res) => {
 
     if (updated === 0) {
       return res.status(404).json({ error: "No changes made or member not found" });
-    }
+    } 
 
     res.status(200).json({ message: "Profile updated successfully", data: { profile_photo_url: profilePhotoUrl }});
   } catch (error) {
