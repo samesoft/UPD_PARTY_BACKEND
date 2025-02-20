@@ -151,6 +151,7 @@ exports.getUnregisteredMemberEventsByState = async (req, res) => {
         INNER JOIN district d ON e.ditrict_id = d.district_id
         WHERE e."Status" = 'Active' 
         AND d.stateid = :state_id
+        AND e.end_time > NOW()
         AND e.id NOT IN (
             SELECT event_id FROM eventregistrations WHERE member_id = :member_id
             )
