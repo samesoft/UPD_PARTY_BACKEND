@@ -6,7 +6,7 @@ const dotenv = require('dotenv');
 const express = require('express');
 const http = require('http');
 const path = require('path');
-require('./schedulers/scheduler');
+// require('./schedulers/scheduler');
 
 // Load environment variables from .env file
 dotenv.config();

@@ -8,6 +8,8 @@ router.get('/eventsByState/:state_id', eventController.getEventsByState);
 router.get('/Unregisted/memberEventsByState/:state_id', eventController.getUnregisteredMemberEventsByState);
 router.get('/member:member_id', eventController.getMemberEvents);
 router.get('/', eventController.getAllEvents);
+router.get('/active/all', eventController.getAllActiveEvents);
+router.put('/updateStatus', eventController.updateEventStatus);
 router.put('/', eventController.updateEvent);
 router.get('/:id', eventController.getEventsByDistrict);
 router.post('/register', eventController.registerToEvent);

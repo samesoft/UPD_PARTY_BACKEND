@@ -188,6 +188,21 @@ exports.getAllEvents = async (req, res) => {
     }
 };
 
+exports.getAllActiveEvents = async (req, res) => {
+    try {
+        const events = await sequelize.query('SELECT * FROM events WHERE "Status" = :status', {
+            replacements: { status: 'Active' },
+            type: sequelize.QueryTypes.SELECT,
+        });
+        console.log(events)
+
+        res.status(200).json({ data: events });
+    } catch (error) {
+        console.error('Error fetching active events:', error);
+        res.status(500).json({ error: 'Failed to fetch active events' });
+    }
+};
+
 exports.getEventsByDistrict = async (req, res) => {
     try {
         const { id } = req.params;
@@ -265,6 +280,23 @@ exports.deleteEvent = async (req, res) => {
     } catch (error) {
         console.error('Error deleting event:', error);
         res.status(500).json({ error: 'Failed to delete event' });
+    }
+};
+
+exports.updateEventStatus = async (req, res) => {
+    const { eventId, status } = req.body;
+    console.log("body: ", req.body);
+
+    try {
+        await sequelize.query('UPDATE events SET "Status" = :status WHERE id = :eventId', {
+            replacements: { status, eventId },
+            type: sequelize.QueryTypes.UPDATE,
+        });
+
+        res.status(200).json({ message: 'Event status updated successfully' });
+    } catch (error) {
+        console.error('Error updating event status:', error);
+        res.status(500).json({ error: 'Failed to update event status' , details: error.details || error.message });
     }
 };
 
