@@ -118,7 +118,7 @@ exports.getDistrictsByState = async (req, res) => {
         const districts = await sequelize.query(
             `SELECT d.*
          FROM district d
-         WHERE d.state_id = :state_id`,
+         WHERE d.stateid = :state_id`,
             {
                 replacements: { state_id },
                 type: sequelize.QueryTypes.SELECT,

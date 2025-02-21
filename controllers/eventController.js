@@ -89,8 +89,8 @@ exports.createEvent = async (req, res) => {
             }
         );
 
-        console.log("event: ", event);
-        console.log("members: ", members);
+        // console.log("event: ", event);
+        // console.log("members: ", members);
 
         // Send success response immediately before sending notifications
         res.status(201).json({
