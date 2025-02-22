@@ -1,12 +1,10 @@
-const { sequelize } = require('../config/dbConfig');
-const bcrypt = require('bcrypt'); // Import bcrypt for password hashing
-const crypto = require('crypto');
-const axios = require('axios');
-const jwt = require('jsonwebtoken');
-const path = require('path');
-const fs = require('fs');
-;
-
+const { sequelize } = require("../config/dbConfig");
+const bcrypt = require("bcrypt"); // Import bcrypt for password hashing
+const crypto = require("crypto");
+const axios = require("axios");
+const jwt = require("jsonwebtoken");
+const path = require("path");
+const fs = require("fs");
 exports.updateMemberProfile = async (req, res) => {
   try {
     const { id } = req.params;
@@ -55,7 +53,12 @@ exports.updateMemberProfile = async (req, res) => {
 
       // Optional: Delete old profile photo from the server
       if (existingData.profile_photo_url) {
-        const oldPhotoPath = path.join(__dirname, '..', 'uploads', existingData.profile_photo_url);
+        const oldPhotoPath = path.join(
+          __dirname,
+          "..",
+          "uploads",
+          existingData.profile_photo_url
+        );
         if (fs.existsSync(oldPhotoPath)) {
           fs.unlinkSync(oldPhotoPath);
         }
@@ -63,12 +66,19 @@ exports.updateMemberProfile = async (req, res) => {
     }
 
     // Update Member Data
+    /*
+
+      TODO: Add a more profecient way of updating partial data
+
+      // ,
+      //  state_id = :state_id, district_id = :district_id, age_group_id = :age_group_id,
+      //  edu_level_id = :edu_level_id
+
+    */
     const [updated] = await sequelize.query(
       `UPDATE members 
        SET first_name = :first_name, last_name = :last_name, email = :email, 
-           mobile = :mobile, profile_photo_url = :profile_photo_url,
-           state_id = :state_id, district_id = :district_id, age_group_id = :age_group_id, 
-           edu_level_id = :edu_level_id
+           mobile = :mobile, profile_photo_url = :profile_photo_url
        WHERE member_id = :id`,
       {
         replacements: {
@@ -77,10 +87,10 @@ exports.updateMemberProfile = async (req, res) => {
           email,
           mobile,
           profile_photo_url: profilePhotoUrl,
-          state_id: state_id || null,
-          district_id: district_id || null,
-          age_group_id: age_group_id || null,
-          edu_level_id: edu_level_id || null,
+          // state_id: state_id || null,
+          // district_id: district_id || null,
+          // age_group_id: age_group_id || null,
+          // edu_level_id: edu_level_id || null,
           id,
         },
         type: sequelize.QueryTypes.UPDATE,
@@ -88,13 +98,20 @@ exports.updateMemberProfile = async (req, res) => {
     );
 
     if (updated === 0) {
-      return res.status(404).json({ error: "No changes made or member not found" });
-    } 
+      return res
+        .status(404)
+        .json({ error: "No changes made or member not found" });
+    }
 
-    res.status(200).json({ message: "Profile updated successfully", data: { profile_photo_url: profilePhotoUrl }});
+    res.status(200).json({
+      message: "Profile updated successfully",
+      data: { profile_photo_url: profilePhotoUrl },
+    });
   } catch (error) {
     console.error("Error updating member profile:", error);
-    res.status(500).json({ error: "Failed to update profile. Please try again later." });
+    res
+      .status(500)
+      .json({ error: "Failed to update profile. Please try again later." });
   }
 };
 exports.createMember = async (req, res) => {
@@ -106,7 +123,7 @@ exports.createMember = async (req, res) => {
       password_hash,
       middle_name,
       mobile,
-      party_role = '', // default if missing
+      party_role = "", // default if missing
       memb_level_id,
       district_id,
       state_id, // new field
@@ -121,16 +138,17 @@ exports.createMember = async (req, res) => {
 
     // Basic validation (adjust as needed)
     if (!first_name || !last_name || !password_hash || !mobile) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
     // Clean the mobile number if it starts with +252
-    const cleanedPhoneNumber = mobile.startsWith('+252') ? mobile.slice(4) : mobile;
-
+    const cleanedPhoneNumber = mobile.startsWith("+252")
+      ? mobile.slice(4)
+      : mobile;
 
     // Check if a user with the cleaned mobile number already exists
     const existingMember = await sequelize.query(
-      'SELECT * FROM members WHERE mobile = :cleanedPhoneNumber',
+      "SELECT * FROM members WHERE mobile = :cleanedPhoneNumber",
       {
         replacements: { cleanedPhoneNumber },
         type: sequelize.QueryTypes.SELECT,
@@ -138,7 +156,9 @@ exports.createMember = async (req, res) => {
     );
 
     if (existingMember.length > 0) {
-      return res.status(400).json({ error: "You're already registered, please login to continue" });
+      return res
+        .status(400)
+        .json({ error: "You're already registered, please login to continue" });
     }
 
     // Hash the password
@@ -147,7 +167,7 @@ exports.createMember = async (req, res) => {
 
     // Create the member
     const result = await sequelize.query(
-      'SELECT create_member(:first_name, :last_name, :email, :password_hash, :middle_name, :mobile, :memb_level_id, :district_id, :state_id, :age_group_id, :edu_level_id, :party_role_id, :party_role, :gender, :role_id)',
+      "SELECT create_member(:first_name, :last_name, :email, :password_hash, :middle_name, :mobile, :memb_level_id, :district_id, :state_id, :age_group_id, :edu_level_id, :party_role_id, :party_role, :gender, :role_id)",
       {
         replacements: {
           first_name,
@@ -171,26 +191,25 @@ exports.createMember = async (req, res) => {
     );
 
     const newMemberId = result[0].member_id;
-    res.status(201).json({ message: 'Member created successfully', member_id: newMemberId });
+    res
+      .status(201)
+      .json({ message: "Member created successfully", member_id: newMemberId });
   } catch (error) {
-    console.log('Error creating member:', error);
-    res.status(500).json({ error: 'Failed to create member' });
+    console.log("Error creating member:", error);
+    res.status(500).json({ error: "Failed to create member" });
   }
 };
-
-
-
 
 // Retrieve a member by id
 exports.getMember = async (req, res) => {
   try {
     const { id } = req.params;
     if (!id) {
-      return res.status(400).json({ error: 'Missing member id' });
+      return res.status(400).json({ error: "Missing member id" });
     }
 
     const result = await sequelize.query(
-      'SELECT * FROM member_get_details(:id)', 
+      "SELECT * FROM member_get_details(:id)",
       {
         replacements: { id },
         type: sequelize.QueryTypes.SELECT,
@@ -198,28 +217,27 @@ exports.getMember = async (req, res) => {
     );
 
     if (!result || result.length === 0) {
-      return res.status(404).json({ error: 'Member not found' });
+      return res.status(404).json({ error: "Member not found" });
     }
 
-    res.status(200).json({data: result[0]});
+    res.status(200).json({ data: result[0] });
   } catch (error) {
-    console.error('Error retrieving member:', error);
-    res.status(500).json({ error: 'Failed to retrieve member' });
+    console.error("Error retrieving member:", error);
+    res.status(500).json({ error: "Failed to retrieve member" });
   }
 };
-
 
 // Retrieve all members with optional pagination
 exports.getAllMembers = async (req, res) => {
   try {
     const page = req.query.page ? parseInt(req.query.page, 10) : null;
     const limit = req.query.limit ? parseInt(req.query.limit, 10) : null;
-    let query = 'SELECT * FROM members';
+    let query = "SELECT * FROM members";
     let replacements = {};
 
     if (page && limit) {
       const offset = (page - 1) * limit;
-      query += ' LIMIT :limit OFFSET :offset';
+      query += " LIMIT :limit OFFSET :offset";
       replacements = { limit, offset };
     }
 
@@ -230,9 +248,12 @@ exports.getAllMembers = async (req, res) => {
 
     if (page && limit) {
       // Get total count for pagination
-      const countResult = await sequelize.query('SELECT COUNT(*) as total FROM members', {
-        type: sequelize.QueryTypes.SELECT,
-      });
+      const countResult = await sequelize.query(
+        "SELECT COUNT(*) as total FROM members",
+        {
+          type: sequelize.QueryTypes.SELECT,
+        }
+      );
       const totalRecords = countResult[0].total;
       const totalPages = Math.ceil(totalRecords / limit);
       res.status(200).json({
@@ -248,8 +269,8 @@ exports.getAllMembers = async (req, res) => {
       res.status(200).json(result);
     }
   } catch (error) {
-    console.error('Error retrieving members:', error);
-    res.status(500).json({ error: 'Failed to retrieve members' });
+    console.error("Error retrieving members:", error);
+    res.status(500).json({ error: "Failed to retrieve members" });
   }
 };
 
@@ -273,7 +294,7 @@ exports.updateMember = async (req, res) => {
       gender,
     } = req.body;
     if (!id || !first_name || !last_name || !email || !password_hash) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      return res.status(400).json({ error: "Missing required fields" });
     }
     await sequelize.query(
       `UPDATE members 
@@ -302,29 +323,28 @@ exports.updateMember = async (req, res) => {
         type: sequelize.QueryTypes.UPDATE,
       }
     );
-    res.status(200).json({ message: 'Member updated successfully' });
+    res.status(200).json({ message: "Member updated successfully" });
   } catch (error) {
-    console.error('Error updating member:', error);
-    res.status(500).json({ error: 'Failed to update member' });
+    console.error("Error updating member:", error);
+    res.status(500).json({ error: "Failed to update member" });
   }
 };
-
 
 // Delete a member
 exports.deleteMember = async (req, res) => {
   try {
     const { id } = req.params;
     if (!id) {
-      return res.status(400).json({ error: 'Missing member id' });
+      return res.status(400).json({ error: "Missing member id" });
     }
-    await sequelize.query('DELETE FROM members WHERE member_id = :id', {
+    await sequelize.query("DELETE FROM members WHERE member_id = :id", {
       replacements: { id },
       type: sequelize.QueryTypes.DELETE,
     });
-    res.status(200).json({ message: 'Member deleted successfully' });
+    res.status(200).json({ message: "Member deleted successfully" });
   } catch (error) {
-    console.log('Error deleting member:', error);
-    res.status(500).json({ error: 'Failed to delete member' });
+    console.log("Error deleting member:", error);
+    res.status(500).json({ error: "Failed to delete member" });
   }
 };
 
@@ -334,18 +354,20 @@ exports.requestOtp = async (req, res) => {
   console.log("Phone number: ", phoneNumber);
 
   if (!phoneNumber) {
-    return res.status(400).json({ error: 'Phone number is required' });
+    return res.status(400).json({ error: "Phone number is required" });
   }
 
   // Clean the phone number (remove +252 if it exists)
-  const cleanedPhoneNumber = phoneNumber.startsWith('+252') ? phoneNumber.slice(4) : phoneNumber;
+  const cleanedPhoneNumber = phoneNumber.startsWith("+252")
+    ? phoneNumber.slice(4)
+    : phoneNumber;
   console.log("Original Phone Number: ", phoneNumber);
   console.log("Cleaned Phone Number: ", cleanedPhoneNumber);
 
   try {
     // Check if the cleaned phone number exists in the members table
     const existingMember = await sequelize.query(
-      'SELECT * FROM members WHERE mobile = :cleanedPhoneNumber',
+      "SELECT * FROM members WHERE mobile = :cleanedPhoneNumber",
       {
         replacements: { cleanedPhoneNumber },
         type: sequelize.QueryTypes.SELECT,
@@ -353,7 +375,9 @@ exports.requestOtp = async (req, res) => {
     );
 
     if (existingMember.length > 0) {
-      return res.status(400).json({ error: "You're already registered, please login to continue" });
+      return res
+        .status(400)
+        .json({ error: "You're already registered, please login to continue" });
     }
 
     // Generate OTP (6-digit random number)
@@ -364,7 +388,7 @@ exports.requestOtp = async (req, res) => {
 
     // Save OTP to the database using the PostgreSQL function
     await sequelize.query(
-      'SELECT member_add_otp(:mobile, :otp, :expiry_time)',
+      "SELECT member_add_otp(:mobile, :otp, :expiry_time)",
       {
         replacements: {
           mobile: cleanedPhoneNumber,
@@ -376,16 +400,16 @@ exports.requestOtp = async (req, res) => {
     );
 
     // Send OTP to the phone number via /owners/sms
-    await axios.post(
-      'https://mgs-backend-api.samesoft.app/api/owners/sms',
-      { phoneNumber: phoneNumber, message: `Your verification code is: ${otp}` }
-    );
+    await axios.post("https://mgs-backend-api.samesoft.app/api/owners/sms", {
+      phoneNumber: phoneNumber,
+      message: `Your verification code is: ${otp}`,
+    });
 
     console.log("THIS IS THE OTP:", otp);
-    res.status(200).json({ success: 'OTP sent successfully' });
+    res.status(200).json({ success: "OTP sent successfully" });
   } catch (error) {
-    console.error('Error sending OTP:', error);
-    res.status(500).json({ error: 'Failed to send OTP' });
+    console.error("Error sending OTP:", error);
+    res.status(500).json({ error: "Failed to send OTP" });
   }
 };
 
@@ -395,11 +419,13 @@ exports.requestOtpForReset = async (req, res) => {
   console.log("Phone number: ", phoneNumber);
 
   if (!phoneNumber) {
-    return res.status(400).json({ error: 'Phone number is required' });
+    return res.status(400).json({ error: "Phone number is required" });
   }
 
   // Clean the phone number (remove +252 if it exists)
-  const cleanedPhoneNumber = phoneNumber.startsWith('+252') ? phoneNumber.slice(4) : phoneNumber;
+  const cleanedPhoneNumber = phoneNumber.startsWith("+252")
+    ? phoneNumber.slice(4)
+    : phoneNumber;
   console.log("Original Phone Number: ", phoneNumber);
   console.log("Cleaned Phone Number: ", cleanedPhoneNumber);
 
@@ -412,7 +438,7 @@ exports.requestOtpForReset = async (req, res) => {
 
     // Save OTP to the database using the PostgreSQL function
     await sequelize.query(
-      'SELECT member_add_otp(:mobile, :otp, :expiry_time)',
+      "SELECT member_add_otp(:mobile, :otp, :expiry_time)",
       {
         replacements: {
           mobile: cleanedPhoneNumber,
@@ -424,16 +450,16 @@ exports.requestOtpForReset = async (req, res) => {
     );
 
     // Send OTP to the phone number via /owners/sms
-    await axios.post(
-      'https://mgs-backend-api.samesoft.app/api/owners/sms',
-      { phoneNumber: phoneNumber, message: `Your verification code is: ${otp}` }
-    );
+    await axios.post("https://mgs-backend-api.samesoft.app/api/owners/sms", {
+      phoneNumber: phoneNumber,
+      message: `Your verification code is: ${otp}`,
+    });
 
     console.log("THIS IS THE OTP:", otp);
-    res.status(200).json({ success: 'OTP sent successfully' });
+    res.status(200).json({ success: "OTP sent successfully" });
   } catch (error) {
-    console.error('Error sending OTP:', error);
-    res.status(500).json({ error: 'Failed to send OTP' });
+    console.error("Error sending OTP:", error);
+    res.status(500).json({ error: "Failed to send OTP" });
   }
 };
 
@@ -442,18 +468,18 @@ exports.verifyOtp = async (req, res) => {
   let { phoneNumber, otp } = req.body;
 
   if (!phoneNumber || !otp) {
-    return res.status(400).json({ error: 'Phone number and OTP are required' });
+    return res.status(400).json({ error: "Phone number and OTP are required" });
   }
 
   // Remove +252 if it exists at the beginning
-  const cleanedPhoneNumber = phoneNumber.startsWith('+252')
-    ? phoneNumber.replace('+252', '')
+  const cleanedPhoneNumber = phoneNumber.startsWith("+252")
+    ? phoneNumber.replace("+252", "")
     : phoneNumber;
 
   try {
     // Call the PostgreSQL function to fetch the OTP record
     const [results] = await sequelize.query(
-      'SELECT * FROM member_get_otp(:mobile, :otp)',
+      "SELECT * FROM member_get_otp(:mobile, :otp)",
       {
         replacements: {
           mobile: cleanedPhoneNumber, // Use the cleaned phone number
@@ -465,32 +491,30 @@ exports.verifyOtp = async (req, res) => {
 
     // Check if the result is empty
     if (!results || results.length === 0) {
-      return res.status(400).json({ error: 'Incorrect OTP' });
+      return res.status(400).json({ error: "Incorrect OTP" });
     }
 
-    console.log('This is the OTP:', results);
+    console.log("This is the OTP:", results);
     const { otp: storedOtp, expiry_time: expiryTime } = results;
 
     // Verify if OTP matches
     if (storedOtp !== otp) {
-      return res.status(400).json({ error: 'Incorrect OTP' });
+      return res.status(400).json({ error: "Incorrect OTP" });
     }
 
     // Check if OTP is expired
     const currentTime = new Date().toISOString(); // Convert current time to UTC ISO format
     if (new Date(currentTime) > new Date(expiryTime)) {
-      return res.status(400).json({ error: 'OTP has expired' });
+      return res.status(400).json({ error: "OTP has expired" });
     }
 
     // OTP is valid
-    return res.status(200).json({ success: 'OTP verified successfully' });
-
+    return res.status(200).json({ success: "OTP verified successfully" });
   } catch (error) {
-    console.error('Error verifying OTP:', error);
-    return res.status(500).json({ error: 'Failed to verify OTP' });
+    console.error("Error verifying OTP:", error);
+    return res.status(500).json({ error: "Failed to verify OTP" });
   }
 };
-
 
 exports.loginMember = async (req, res) => {
   try {
@@ -511,15 +535,18 @@ exports.loginMember = async (req, res) => {
 
     // If member not found
     if (!member) {
-      console.log('Member not found for mobile:', mobile);
-      return res.status(404).json({ error: 'Member not found' });
+      console.log("Member not found for mobile:", mobile);
+      return res.status(404).json({ error: "Member not found" });
     }
 
     // Compare the entered password hash with the stored password hash
-    const isPasswordValid = await bcrypt.compare(password_hash, member.password_hash);
+    const isPasswordValid = await bcrypt.compare(
+      password_hash,
+      member.password_hash
+    );
     if (!isPasswordValid) {
-      console.log('Invalid password attempt for member:', mobile);
-      return res.status(401).json({ error: 'Invalid credentials' });
+      console.log("Invalid password attempt for member:", mobile);
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
     // Update device token if provided
@@ -537,16 +564,16 @@ exports.loginMember = async (req, res) => {
     const token = jwt.sign(
       { member_id: member.member_id, role_id: member.role_id },
       process.env.TOKEN_KEY,
-      { expiresIn: '2h' }
+      { expiresIn: "2h" }
     );
 
     console.log(member);
 
     // Respond with token, member_id, role_id and the role_name from the roles table.
     res.status(200).json({
-      message: 'Login successful',
+      message: "Login successful",
       token: token,
-      member:member,
+      member: member,
       member_id: member.member_id,
       role_id: member.role_id,
       state_id: member.state_id,
@@ -554,26 +581,29 @@ exports.loginMember = async (req, res) => {
       district_id: member.district_id,
     });
   } catch (error) {
-    console.error('Error logging in:', error);
-    res.status(500).json({ error: 'Failed to log in', details: error.message });
+    console.error("Error logging in:", error);
+    res.status(500).json({ error: "Failed to log in", details: error.message });
   }
 };
-
 
 exports.resetPassword = async (req, res) => {
   try {
     const { mobile, new_password, otp } = req.body;
 
     if (!mobile || !new_password || !otp) {
-      return res.status(400).json({ error: 'Mobile number, new password, and OTP are required' });
+      return res
+        .status(400)
+        .json({ error: "Mobile number, new password, and OTP are required" });
     }
 
     // Clean the phone number by removing +252 if it exists
-    const cleanedPhoneNumber = mobile.startsWith('+252') ? mobile.replace('+252', '') : mobile;
+    const cleanedPhoneNumber = mobile.startsWith("+252")
+      ? mobile.replace("+252", "")
+      : mobile;
 
     // Verify OTP
     const [otpResults] = await sequelize.query(
-      'SELECT * FROM member_get_otp(:mobile, :otp)',
+      "SELECT * FROM member_get_otp(:mobile, :otp)",
       {
         replacements: { mobile: cleanedPhoneNumber, otp },
         type: sequelize.QueryTypes.SELECT,
@@ -581,18 +611,18 @@ exports.resetPassword = async (req, res) => {
     );
 
     if (!otpResults || otpResults.length === 0) {
-      return res.status(400).json({ error: 'Incorrect OTP' });
+      return res.status(400).json({ error: "Incorrect OTP" });
     }
 
     const { otp: storedOtp, expiry_time: expiryTime } = otpResults;
 
     if (storedOtp !== otp) {
-      return res.status(400).json({ error: 'Incorrect OTP' });
+      return res.status(400).json({ error: "Incorrect OTP" });
     }
 
     const currentTime = new Date().toISOString();
     if (new Date(currentTime) > new Date(expiryTime)) {
-      return res.status(400).json({ error: 'OTP has expired' });
+      return res.status(400).json({ error: "OTP has expired" });
     }
 
     // OTP is valid, proceed with password reset
@@ -605,7 +635,9 @@ exports.resetPassword = async (req, res) => {
     );
 
     if (!existingUser) {
-      return res.status(404).json({ error: 'Member with this phone number does not exist' });
+      return res
+        .status(404)
+        .json({ error: "Member with this phone number does not exist" });
     }
 
     // Hash the new password
@@ -620,14 +652,14 @@ exports.resetPassword = async (req, res) => {
       }
     );
 
-    res.status(200).json({ message: 'Password reset successfully' });
+    res.status(200).json({ message: "Password reset successfully" });
   } catch (error) {
-    console.error('Error resetting password:', error);
-    res.status(500).json({ error: 'Failed to reset password', details: error.message });
+    console.error("Error resetting password:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to reset password", details: error.message });
   }
 };
-
-
 
 exports.createDonation = async (req, res) => {
   try {
@@ -635,12 +667,12 @@ exports.createDonation = async (req, res) => {
 
     // Basic validation
     if (!member_id || !amount || !payment_method || !transaction_id) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
     // Call the stored function
     const result = await sequelize.query(
-      'SELECT create_donation(:member_id, :amount, :payment_method, :transaction_id) AS don_id',
+      "SELECT create_donation(:member_id, :amount, :payment_method, :transaction_id) AS don_id",
       {
         replacements: { member_id, amount, payment_method, transaction_id },
         type: sequelize.QueryTypes.RAW,
@@ -649,14 +681,13 @@ exports.createDonation = async (req, res) => {
 
     res.status(201).json({ don_id: result[0].don_id });
   } catch (error) {
-    console.error('Error creating donation:', error);
-    res.status(500).json({ error: 'Failed to create donation' });
+    console.error("Error creating donation:", error);
+    res.status(500).json({ error: "Failed to create donation" });
   }
 };
 
-
 const initializeWaafiPay = () => {
-  return require('waafipay-sdk-node').API(
+  return require("waafipay-sdk-node").API(
     "API-1144768468AHX", //merchantUid
     "1000201", //apiUserId
     "M0910188", //apiKey
@@ -673,7 +704,7 @@ exports.requestPayment = async (req, res) => {
     if (!phone || !amount) {
       return res.status(400).json({
         success: false,
-        message: 'Phone number and amount are required fields.',
+        message: "Phone number and amount are required fields.",
       });
     }
     const waafipay = initializeWaafiPay();
@@ -688,29 +719,28 @@ exports.requestPayment = async (req, res) => {
       },
       async (err, result) => {
         if (err) {
-          console.error('Error from WaafiPay:', err);
+          console.error("Error from WaafiPay:", err);
           return res.status(500).json({
             success: false,
-            message: 'Failed to request payment.',
+            message: "Failed to request payment.",
             details: err.message,
           });
         }
-        console.log('WaafiPay response:', result);
-
+        console.log("WaafiPay response:", result);
 
         if (result.responseCode === "2001") {
-
           // Extract relevant details from the WaafiPay response
           const { referenceId, transactionId, txAmount } = result.params;
 
           // Prepare the phone number for SMS
-          const formattedPhone = phone.startsWith('+252') ? phone : `+252${phone}`;
-          const message = `Thank you for donating $${txAmount} to the upd party`
+          const formattedPhone = phone.startsWith("+252")
+            ? phone
+            : `+252${phone}`;
+          const message = `Thank you for donating $${txAmount} to the upd party`;
           console.log("message: ", message);
 
-
           const response = await axios.post(
-            'https://upd-party-backend.samesoft.app/api/members/sms',
+            "https://upd-party-backend.samesoft.app/api/members/sms",
             { phoneNumber: formattedPhone, message: message }
           );
 
@@ -736,29 +766,30 @@ exports.requestPayment = async (req, res) => {
           try {
             // Make POST request to https://api.waafipay.net/asm
             const apiResponse = await axios.post(
-              'https://api.waafipay.net/asm',
+              "https://api.waafipay.net/asm",
               data_for_asm,
               {
                 headers: {
-                  'Content-Type': 'application/json',
+                  "Content-Type": "application/json",
                 },
               }
             );
 
-            console.log('Response from WaafiPay ASM API:', apiResponse.data);
+            console.log("Response from WaafiPay ASM API:", apiResponse.data);
 
             // Payment request processed successfully
             return res.status(200).json({
               success: true,
-              message: 'Payment request processed successfully',
+              message: "Payment request processed successfully",
               waafipayResponse: result,
               // asmResponse: apiResponse.data,
             });
           } catch (apiError) {
-            console.error('Error while sending data to ASM API:', apiError);
+            console.error("Error while sending data to ASM API:", apiError);
             return res.status(500).json({
               success: false,
-              message: 'Payment request processed but failed to commit the transaction.',
+              message:
+                "Payment request processed but failed to commit the transaction.",
               details: apiError.message,
             });
           }
@@ -768,23 +799,23 @@ exports.requestPayment = async (req, res) => {
           // Payment aborted by the user
           return res.status(400).json({
             success: false,
-            message: 'Payment request was aborted by the user.',
+            message: "Payment request was aborted by the user.",
           });
         }
 
         // Payment request failed
         return res.status(400).json({
           success: false,
-          message: 'Payment request failed. Please try again.',
+          message: "Payment request failed. Please try again.",
           details: result.responseMsg,
         });
       }
     );
   } catch (error) {
-    console.error('Error while requesting payment:', error);
+    console.error("Error while requesting payment:", error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error.',
+      message: "Internal server error.",
       details: error.message,
     });
   }
@@ -799,15 +830,15 @@ exports.sendSMS = async (req, res) => {
   try {
     // Get access token
     const tokenResponse = await axios.post(
-      'https://smsapi.hormuud.com/Token',
+      "https://smsapi.hormuud.com/Token",
       new URLSearchParams({
-        grant_type: 'password',
+        grant_type: "password",
         username: username,
-        password: password
+        password: password,
       }),
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
       }
     );
@@ -815,12 +846,12 @@ exports.sendSMS = async (req, res) => {
     const accessToken = tokenResponse.data.access_token;
 
     if (!accessToken) {
-      throw new Error('Failed to retrieve access token.');
+      throw new Error("Failed to retrieve access token.");
     }
 
     // Send SMS
     const smsResponse = await axios.post(
-      'https://smsapi.hormuud.com/api/sendSMS',
+      "https://smsapi.hormuud.com/api/sendSMS",
       {
         mobile: phoneNumber,
         message: message,
@@ -828,17 +859,16 @@ exports.sendSMS = async (req, res) => {
       },
       {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
         },
       }
     );
     console.log("sms response: ", smsResponse.data);
-    res.status(200).json({ success: 'successfuly send the message' });
-
+    res.status(200).json({ success: "successfuly send the message" });
   } catch (error) {
-    res.status(500).json('Error sending SMS:', error);
-    console.error('Error sending SMS:', error);
-    return { error: error.message || 'Failed to send SMS' };
+    res.status(500).json("Error sending SMS:", error);
+    console.error("Error sending SMS:", error);
+    return { error: error.message || "Failed to send SMS" };
   }
-}
+};
