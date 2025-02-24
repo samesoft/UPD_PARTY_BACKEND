@@ -114,7 +114,6 @@ exports.createEvent = async (req, res) => {
 };
 
 
-
 exports.getEventsByState = async (req, res) => {
     try {
         const { state_id } = req.params;
@@ -146,14 +145,15 @@ exports.getUnregisteredMemberEventsByState = async (req, res) => {
     try {
         const { state_id } = req.params;
         const { member_id } = req.query;
+        console.log(req.params, req.query);
 
         const events = await sequelize.query(
             `
         SELECT e.*, d.district
         FROM events e
         INNER JOIN district d ON e.ditrict_id = d.district_id
-        WHERE e."Status" = 'Active' 
-        AND d.stateid = :state_id
+        WHERE e."Status" = 'Active'
+        AND d.stateid = :state_id 
         AND e.end_time > NOW()
         AND e.id NOT IN (
             SELECT event_id FROM eventregistrations WHERE member_id = :member_id
@@ -190,11 +190,21 @@ exports.getAllEvents = async (req, res) => {
 
 exports.getAllActiveEvents = async (req, res) => {
     try {
-        const events = await sequelize.query('SELECT * FROM events WHERE "Status" = :status', {
-            replacements: { status: 'Active' },
-            type: sequelize.QueryTypes.SELECT,
-        });
-        console.log(events)
+        const events = await sequelize.query(
+            `SELECT 
+                e.*, 
+                d.stateid, 
+                s.state AS state
+            FROM events e
+            JOIN district d ON e.ditrict_id = d.district_id
+            JOIN state s ON d.stateid = s.stateid
+            WHERE e."Status" = :status;`,
+            {
+                replacements: { status: 'Active' },
+                type: sequelize.QueryTypes.SELECT, // Ensure `Sequelize` is correctly referenced
+            }
+        );
+        
 
         res.status(200).json({ data: events });
     } catch (error) {
