@@ -15,7 +15,7 @@ CREATE OR REPLACE FUNCTION public.region_insert(p_regionId INTEGER, p_region cha
 AS $function$
 BEGIN
     INSERT INTO public.region (regionid, region, stateid)
-    VALUES (p_regionId, p_region, p_stateid);
+    VALUES (p_regionId, p_region, p_stateid)
     ON CONFLICT (regionid) DO NOTHING;
 END;
 $function$;
