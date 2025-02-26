@@ -27,6 +27,8 @@
     "pg": "^8.13.1",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.5",
+    "uuid": "^11.1.0",
+    "uuidv4": "^6.2.13",
     "waafipay-sdk-node": "^0.1.6"
   }
 }
