@@ -7,5 +7,5 @@ const { v4: uuidv4 } = require("uuid");
 exports.generateUniqueInteger = () => {
   const uuid = uuidv4();
   const hex = uuid.replace(/-/g, "").slice(0, 8);
-  return parseInt(hex, 10);
+  return parseInt(hex, 10) ?? Math.random() * 100000000;
 };

@@ -52,10 +52,12 @@ exports.createRegion = async (req, res) => {
         .json({ error: "Missing required fields: region or stateid" });
     }
 
+    const id = generateUniqueInteger();
+
     await sequelize.query(
       "SELECT region_insert(:regionid, :region, :stateid)",
       {
-        replacements: { regionid: generateUniqueInteger(), region, stateid },
+        replacements: { regionid: id, region, stateid },
         type: sequelize.QueryTypes.SELECT,
       }
     );

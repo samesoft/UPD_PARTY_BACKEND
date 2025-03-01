@@ -12,6 +12,8 @@ exports.createDistrict = async (req, res) => {
       });
     }
 
+    const id = generateUniqueInteger();
+
     const [result] = await sequelize.query(
       `
         INSERT INTO district (district_id, district, regionid, stateid)
@@ -20,7 +22,7 @@ exports.createDistrict = async (req, res) => {
         `,
       {
         replacements: {
-          district_id: generateUniqueInteger(),
+          district_id: id,
           district,
           stateid,
           regionid,
