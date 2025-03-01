@@ -242,7 +242,7 @@ exports.getRecentActivities = async (req, res) => {
         id: `event-${event.id}`,
         type: "event",
         title: "New event created",
-        description: `${event.title} ${event.description} will be in ${event.location}`,
+        description: `${event.title} ${event.description}, ${event.location}`,
 
         timestamp: event.end_time,
         timeAgo: getTimeAgo(event.end_time),
