@@ -400,7 +400,7 @@ exports.requestOtp = async (req, res) => {
     );
 
     // Send OTP to the phone number via /owners/sms
-    await axios.post("https://mgs-backend-api.samesoft.app/api/owners/sms", {
+    await axios.post("https://mgs-otp.samesoft.app/api/owners/sms", {
       phoneNumber: phoneNumber,
       message: `Your verification code is: ${otp}`,
     });
@@ -450,7 +450,7 @@ exports.requestOtpForReset = async (req, res) => {
     );
 
     // Send OTP to the phone number via /owners/sms
-    await axios.post("https://mgs-backend-api.samesoft.app/api/owners/sms", {
+    await axios.post("https://mgs-otp.samesoft.app/api/owners/sms", {
       phoneNumber: phoneNumber,
       message: `Your verification code is: ${otp}`,
     });
@@ -736,7 +736,7 @@ exports.requestPayment = async (req, res) => {
           const formattedPhone = phone.startsWith("+252")
             ? phone
             : `+252${phone}`;
-          const message = `Thank you for donating $${txAmount} to the upd party`;
+          const message = `Thank you for donating $${txAmount} to the Khaire party`;
           console.log("message: ", message);
 
           const response = await axios.post(
@@ -822,7 +822,7 @@ exports.requestPayment = async (req, res) => {
 };
 
 exports.sendSMS = async (req, res) => {
-  const username = "MOF2024";
+  const username = "Mgs2021";
   const password = "2QSzn638r3ubcu7bHo0Zmg==";
   const sender_id = "WMaaliyadda";
   const { phoneNumber, message } = req.body;
