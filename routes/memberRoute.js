@@ -24,6 +24,7 @@ router.get('/:id', memberController.getMember);
 router.get('/', memberController.getAllMembers);
 // router.put('/:id', memberController.updateMember);
 router.delete('/:id', memberController.deleteMember);
+router.post('/send-notification', memberController.sendNotification);
 router.post('/requestOtp', memberController.requestOtp);
 router.post('/requestOtpForReset', memberController.requestOtpForReset);
 router.post('/verify-otp', memberController.verifyOtp);

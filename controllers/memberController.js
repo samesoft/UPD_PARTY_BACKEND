@@ -5,6 +5,8 @@ const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const fs = require("fs");
+const admin = require('firebase-admin');
+
 exports.updateMemberProfile = async (req, res) => {
   try {
     const { id } = req.params;
@@ -412,6 +414,34 @@ exports.requestOtp = async (req, res) => {
     res.status(500).json({ error: "Failed to send OTP" });
   }
 };
+
+//const { sequelize } = require(".firebase-service-account.json");
+admin.initializeApp({
+  credential: admin.credential.cert(require('../firebase-service-account.json')),
+});
+
+
+exports.sendNotification = async (req, res) => {
+  const { device_token, title, body } = req.body;
+
+  const message = {
+    token: device_token,
+    notification: {
+      title: title,
+      body: body,
+    },
+  };
+
+  try {
+    const response = await admin.messaging().send(message);
+    console.log("Successfully sent message:", response);
+    res.status(200).send({ success: true });
+  } catch (error) {
+    console.error("Error sending message please contact 501:", error);
+    res.status(500).send({ error: error.message });
+  }
+};
+    
 
 exports.requestOtpForReset = async (req, res) => {
   const { phoneNumber } = req.body;
