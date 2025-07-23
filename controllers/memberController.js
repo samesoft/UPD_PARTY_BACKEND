@@ -385,8 +385,8 @@ exports.requestOtp = async (req, res) => {
     // Generate OTP (6-digit random number)
     const otp = crypto.randomInt(100000, 999999).toString();
 
-    // Set OTP expiry time (e.g., 15 minutes)
-    const expiryTime = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+    // Set OTP expiry time (e.g., 1 hour)
+    const expiryTime = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
 
     // Save OTP to the database using the PostgreSQL function
     await sequelize.query(
@@ -492,8 +492,8 @@ exports.requestOtpForReset = async (req, res) => {
     // Generate OTP (6-digit random number)
     const otp = crypto.randomInt(100000, 999999).toString();
 
-    // Set OTP expiry time (e.g., 15 minutes)
-    const expiryTime = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+    // Set OTP expiry time (e.g., 1 hour)
+    const expiryTime = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
 
     // Save OTP to the database using the PostgreSQL function
     await sequelize.query(
