@@ -415,6 +415,35 @@ exports.requestOtp = async (req, res) => {
   }
 };
 
+// OTP Management: Search recent OTP by phone number
+exports.getRecentOtpByPhone = async (req, res) => {
+  const { phoneNumber } = req.body;
+  if (!phoneNumber) {
+    return res.status(400).json({ error: "Phone number is required" });
+  }
+  // Clean the phone number (remove +252 if it exists)
+  const cleanedPhoneNumber = phoneNumber.startsWith("+252")
+    ? phoneNumber.slice(4)
+    : phoneNumber;
+  try {
+    // Query the most recent, unexpired OTP for this phone number
+    const [otpRecord] = await sequelize.query(
+      `SELECT * FROM otp_store WHERE mobile = :mobile AND expiry_time > NOW() ORDER BY expiry_time DESC LIMIT 1`,
+      {
+        replacements: { mobile: cleanedPhoneNumber },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+    if (!otpRecord) {
+      return res.status(404).json({ error: "No valid OTP found for this phone number" });
+    }
+    return res.status(200).json({ otp: otpRecord.otp, expiry_time: otpRecord.expiry_time, created_at: otpRecord.created_at });
+  } catch (error) {
+    console.error("Error fetching OTP:", error);
+    return res.status(500).json({ error: "Failed to fetch OTP" });
+  }
+};
+
 //const { sequelize } = require(".firebase-service-account.json");
 admin.initializeApp({
   credential: admin.credential.cert(require('../firebase-service-account.json')),

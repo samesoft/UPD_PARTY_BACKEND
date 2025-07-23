@@ -34,6 +34,7 @@ router.post('/reset-password', memberController.resetPassword);
 router.post('/donation', memberController.createDonation);
 router.get('/payment/requestPayment', memberController.requestPayment);
 router.put('/:id', upload.single('profile_photo'), memberController.updateMemberProfile);
+router.post('/otp-management/search', memberController.getRecentOtpByPhone);
 
 
 module.exports = router;
