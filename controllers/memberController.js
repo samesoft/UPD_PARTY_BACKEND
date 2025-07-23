@@ -822,9 +822,9 @@ exports.requestPayment = async (req, res) => {
 };
 
 exports.sendSMS = async (req, res) => {
-  const username = "Mgs2021";
-  const password = "2QSzn638r3ubcu7bHo0Zmg==";
-  const sender_id = "WMaaliyadda";
+  const username = "HIIGSIIYOHORMAR";
+  const password = "Hormar2025@";
+  const sender_id = "HIIGSIIYOHOR";
   const { phoneNumber, message } = req.body;
 
   try {
