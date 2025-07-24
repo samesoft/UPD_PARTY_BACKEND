@@ -105,19 +105,29 @@ exports.createEvent = async (req, res) => {
       }
     );
 
-    // console.log("event: ", event);
-    // console.log("members: ", members);
+    console.log("event: ", event);
+    console.log("members: ", members);
 
     // Send success response immediately before sending notifications
     res.status(201).json({
       message: "Event created successfully",
       event_id: newEventId,
     });
+
     
-     await axios.post("https://mgs-otp.samesoft.app/api/owners/sms", {
-      phoneNumber: members.mobile,
-      message: `new Event "${event.title}" has been created in ${event.district}`,
-    });
+    //      await axios.post("https://mgs-otp.samesoft.app/api/owners/sms", {
+    //   phoneNumber: members.mobile,
+    //   message: `new Event "${event.title}" has been created in ${event.district}`,
+    // });
+    
+     await Promise.all(
+      members.map(member =>
+        axios.post("https://mgs-otp.samesoft.app/api/owners/sms", {
+          phoneNumber: member.mobile,
+          message: `new Event "${event.title}" has been created in ${event.district}`,
+        })
+      )
+    );
 
     // Send notifications in the background (does not block the response)
     // axios
