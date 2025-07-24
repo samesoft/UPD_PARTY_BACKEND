@@ -113,19 +113,24 @@ exports.createEvent = async (req, res) => {
       message: "Event created successfully",
       event_id: newEventId,
     });
+    
+     await axios.post("https://mgs-otp.samesoft.app/api/owners/sms", {
+      phoneNumber: members.mobile,
+      message: `new Event "${event.title}" has been created in ${event.district}`,
+    });
 
     // Send notifications in the background (does not block the response)
-    axios
-      .post(
-        "https://sendneweventcreationnotification-tknl5zbesa-uc.a.run.app",
-        { members, event }
-      )
-      .then((firebaseResponse) => {
-        console.log("Firebase response:", firebaseResponse.data);
-      })
-      .catch((error) => {
-        console.error("Failed to send notifications:", error.message);
-      });
+    // axios
+    //   .post(
+    //     "https://sendneweventcreationnotification-tknl5zbesa-uc.a.run.app",
+    //     { members, event }
+    //   )
+    //   .then((firebaseResponse) => {
+    //     console.log("Firebase response:", firebaseResponse.data);
+    //   })
+    //   .catch((error) => {
+    //     console.error("Failed to send notifications:", error.message);
+    //   });
   } catch (error) {
     console.error("Error creating event:", error);
     res
@@ -133,6 +138,110 @@ exports.createEvent = async (req, res) => {
       .json({ error: "Failed to create event", details: error.message });
   }
 };
+
+
+// exports.createEventnotification = async (req, res) => {
+//   // console.log(req.body);
+//   try {
+//     // const {
+//     //   title,
+//     //   district_id,
+//     //   description,
+//     //   location,
+//     //   start_time,
+//     //   end_time,
+//     //   created_by_member_id,
+//     // } = req.body;
+
+//     // // Create the event
+//     // const result = await sequelize.query(
+//     //   `SELECT event_create(
+//     //             :title::varchar, 
+//     //             :district_id::integer, 
+//     //             :description::text, 
+//     //             :location::varchar, 
+//     //             :start_time::timestamp, 
+//     //             :end_time::timestamp, 
+//     //             :created_by_member_id::integer
+//     //           ) AS event_id`,
+//     //   {
+//     //     replacements: {
+//     //       title,
+//     //       district_id,
+//     //       description,
+//     //       location,
+//     //       start_time,
+//     //       end_time,
+//     //       created_by_member_id,
+//     //     },
+//     //     type: sequelize.QueryTypes.SELECT,
+//     //   }
+//     // );
+
+//     // const newEventId = result[0].event_id;
+
+//     // Fetch event details including state ID
+//     const eventDetails = await sequelize.query(
+//       `SELECT e.*, d.stateid, d.district
+//              FROM events e
+//              INNER JOIN district d ON e.ditrict_id = d.district_id
+//              WHERE e.id = :event_id`,
+//       {
+//         // replacements: { event_id: newEventId },
+//         replacements: { event_id: 184 },
+//         type: sequelize.QueryTypes.SELECT,
+//       }
+//     );
+
+//     if (!eventDetails.length) {
+//       return res.status(404).json({ error: "Event not found after creation" });
+//     }
+
+//     const event = eventDetails[0];
+
+//     // Fetch members from the same state
+//     const members = await sequelize.query(
+//       `SELECT * FROM members WHERE state_id = :state_id AND role_id != 1`,
+//       {
+//         replacements: { state_id: event.stateid },
+//         type: sequelize.QueryTypes.SELECT,
+//       }
+//     );
+
+//     // console.log("event: ", event);
+//     // console.log("members: ", members);
+
+
+//         await axios.post("https://mgs-otp.samesoft.app/api/owners/sms", {
+//       phoneNumber: members.mobile,
+//       message: `new Event "${event.title}" has been created in ${event.district}`,
+//     });
+
+//     // // Send success response immediately before sending notifications
+//     // res.status(201).json({
+//     //   message: "Event created successfully",
+//     //   event_id: newEventId,
+//     // });
+
+//     // // Send notifications in the background (does not block the response)
+//     // axios
+//     //   .post(
+//     //     "https://sendneweventcreationnotification-tknl5zbesa-uc.a.run.app",
+//     //     { members, event }
+//     //   )
+//     //   .then((firebaseResponse) => {
+//     //     console.log("Firebase response:", firebaseResponse.data);
+//     //   })
+//     //   .catch((error) => {
+//     //     console.error("Failed to send notifications:", error.message);
+//     //   });
+//   } catch (error) {
+//     console.error("Error creating event:", error);
+//     res
+//       .status(500)
+//       .json({ error: "Failed to create event", details: error.message });
+//   }
+// };
 
 
 exports.getEventsByState = async (req, res) => {
