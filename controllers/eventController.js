@@ -38,6 +38,15 @@ const axios = require("axios");
 //     }
 // };
 
+const admin = require("firebase-admin");
+
+
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(require('../firebase-service-account.json')),
+  });
+}
+
 exports.createEvent = async (req, res) => {
   console.log(req.body);
   try {
@@ -114,20 +123,49 @@ exports.createEvent = async (req, res) => {
       event_id: newEventId,
     });
 
+
     
-    //      await axios.post("https://mgs-otp.samesoft.app/api/owners/sms", {
-    //   phoneNumber: members.mobile,
-    //   message: `new Event "${event.title}" has been created in ${event.district}`,
-    // });
+    //  await Promise.all(
+    //   members.map(member =>
+    //     axios.post("https://mgs-otp.samesoft.app/api/owners/sms", {
+    //       phoneNumber: member.mobile,
+    //       message: `new Event "${event.title}" has been created in ${event.district}`,
+    //     })
+    //   )
+    // );
+
+
+
+    // Send notification to each member with device_token
+    await Promise.all(
+      members
+        .filter(member => member.device_token && member.device_token.trim() !== "")
+        .map(async (member) => {
+          const message = {
+            token: member.device_token,
+            notification: {
+              title: "Hiigsi & Horumar",
+              body: `New Event "${event.title}" has been created in ${event.district}`,
+            },
+            data: {
+              memberId: String(member.member_id),
+              state_id: String(event.stateid),
+              district: event.district,
+            },
+          };
     
-     await Promise.all(
-      members.map(member =>
-        axios.post("https://mgs-otp.samesoft.app/api/owners/sms", {
-          phoneNumber: member.mobile,
-          message: `new Event "${event.title}" has been created in ${event.district}`,
+          try {
+            await admin.messaging().send(message);
+          } catch (error) {
+            console.warn(
+              `Failed to send notification to member ${member.member_id}:`,
+              error.message
+            );
+            // Optionally: remove or mark the invalid device_token in DB
+          }
         })
-      )
     );
+        
 
     // Send notifications in the background (does not block the response)
     // axios
